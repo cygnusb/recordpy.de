@@ -208,18 +208,20 @@ def api_station_detail(station_id: str):
     }
 
 
-@app.get("/", response_class=HTMLResponse)
+# methods must include HEAD explicitly: FastAPI's @app.get registers GET only,
+# and HEAD requests would fall through to the StaticFiles 404.
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def index():
     html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
     return html.replace("{{BASE_URL}}", config.BASE_URL)
 
 
-@app.get("/robots.txt", response_class=PlainTextResponse)
+@app.api_route("/robots.txt", methods=["GET", "HEAD"], response_class=PlainTextResponse)
 def robots_txt():
     return f"User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: {config.BASE_URL}/sitemap.xml\n"
 
 
-@app.get("/sitemap.xml")
+@app.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 def sitemap_xml():
     today = datetime.now(ZoneInfo(config.LOCAL_TZ)).date().isoformat()
     xml = (
