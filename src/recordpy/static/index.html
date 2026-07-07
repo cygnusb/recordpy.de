@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>recordpy.de — Temperaturrekorde Deutschland</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E🌡%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>record<span class="accent">py</span>.de</h1>
+  <p class="subtitle">Temperaturrekorde Deutschland — live</p>
+  <div class="controls">
+    <div class="mode-toggle">
+      <button id="mode-heat" class="active">🔥 Hitze</button>
+      <button id="mode-cold">❄️ Kälte</button>
+    </div>
+    <select id="filter-land"><option value="">Alle Bundesländer</option></select>
+    <label>Höhe ≤ <input type="number" id="filter-alt" placeholder="∞" min="0" step="100"> m</label>
+  </div>
+  <div class="legend" id="legend"></div>
+</header>
+<div id="map"></div>
+<aside id="panel" class="hidden">
+  <button id="panel-close">×</button>
+  <div id="panel-content"></div>
+</aside>
+<footer>
+  Datenbasis: <a href="https://opendata.dwd.de/" target="_blank" rel="noopener">Deutscher Wetterdienst</a> (CDC Open Data),
+  Werte ~30 min verzögert · Stand: <span id="generated-at">–</span>
+</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

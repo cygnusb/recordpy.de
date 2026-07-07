@@ -1,0 +1,27 @@
+[project]
+name = "recordpy"
+version = "0.1.0"
+description = "Temperaturrekorde Deutschland — Live-Karte auf Basis von DWD Open Data"
+readme = "README.md"
+authors = [
+    { name = "cygnusb", email = "cygnusb@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "apscheduler>=3.11.3",
+    "fastapi>=0.139.0",
+    "httpx>=0.28.1",
+    "uvicorn[standard]>=0.50.2",
+]
+
+[project.scripts]
+recordpy = "recordpy:main"
+
+[build-system]
+requires = ["uv_build>=0.9.27,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
