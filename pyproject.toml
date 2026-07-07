@@ -1,7 +1,7 @@
 [project]
 name = "recordpy"
 version = "0.1.0"
-description = "Temperaturrekorde Deutschland — Live-Karte auf Basis von DWD Open Data"
+description = "Temperature records in Germany — live map based on DWD open data"
 readme = "README.md"
 authors = [
     { name = "cygnusb", email = "cygnusb@users.noreply.github.com" }

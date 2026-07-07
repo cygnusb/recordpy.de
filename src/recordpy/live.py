@@ -1,4 +1,4 @@
-"""Live-Poller: 10-Minuten-Daten holen und heutiges Max/Min je Station pflegen."""
+"""Live poller: fetch 10-minute data and maintain today's max/min per station."""
 
 import logging
 import sqlite3
@@ -15,7 +15,7 @@ TZ = ZoneInfo(config.LOCAL_TZ)
 
 
 def poll_station(client: DwdClient, station_id: str) -> tuple[str, float, float, datetime] | None:
-    """Liefert (Datum lokal, Tmax, Tmin, letzte Messung) für heute — oder None."""
+    """Return (local date, tmax, tmin, last measurement) for today — or None."""
     values = [(ts.astimezone(TZ), tt) for ts, tt in client.now_values(station_id)]
     today = datetime.now(TZ).date()
     todays = [(ts, tt) for ts, tt in values if ts.date() == today]
@@ -30,7 +30,7 @@ def poll_all(conn: sqlite3.Connection, client: DwdClient | None = None) -> None:
     own_client = client is None
     client = client or DwdClient()
     station_ids = [row["id"] for row in conn.execute("SELECT id FROM stations")]
-    log.info("Live-Poll für %d Stationen", len(station_ids))
+    log.info("Live poll for %d stations", len(station_ids))
 
     results = []
     with ThreadPoolExecutor(max_workers=8) as pool:
@@ -51,6 +51,6 @@ def poll_all(conn: sqlite3.Connection, client: DwdClient | None = None) -> None:
                 "INSERT OR REPLACE INTO live_state VALUES (?,?,?,?,?)",
                 (sid, day, tmax, tmin, last_ts.isoformat()),
             )
-    log.info("Live-Poll fertig: %d/%d Stationen mit heutigen Daten", len(results), len(station_ids))
+    log.info("Live poll done: %d/%d stations with data for today", len(results), len(station_ids))
     if own_client:
         client.close()

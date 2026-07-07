@@ -1,53 +1,62 @@
 # recordpy.de
 
-Temperaturrekorde Deutschland als Live-Karte — inspiriert von [recordpy.fr](https://recordpy.fr),
-auf Basis von [DWD Open Data](https://opendata.dwd.de/climate_environment/CDC/) (CDC).
+[![CI](https://github.com/cygnusb/recordpy.de/actions/workflows/ci.yml/badge.svg)](https://github.com/cygnusb/recordpy.de/actions/workflows/ci.yml)
+[![GHCR](https://img.shields.io/badge/ghcr.io-cygnusb%2Frecordpy.de-blue?logo=github)](https://github.com/cygnusb/recordpy.de/pkgs/container/recordpy.de)
+[![Docker Hub](https://img.shields.io/docker/pulls/cygnusbn/recordpy.de?logo=docker)](https://hub.docker.com/r/cygnusbn/recordpy.de)
+[![Python](https://img.shields.io/badge/python-3.14-blue?logo=python&logoColor=white)](pyproject.toml)
 
-Für jede Wetterstation mit mindestens 30 Jahren Messhistorie und aktuellen
-10-Minuten-Daten zeigt die Karte, wie nah die heutige Temperatur an den
-historischen Rekorden liegt: Tagesrekord (gleicher Kalendertag), Monatsrekord
-und Allzeitrekord — jeweils für Hitze (Tmax) und Kälte (Tmin).
+Live map of temperature records in Germany — inspired by [recordpy.fr](https://recordpy.fr),
+built on [DWD Open Data](https://opendata.dwd.de/climate_environment/CDC/) (Climate Data Center
+of the German Meteorological Service).
 
-## Betrieb mit Docker (empfohlen)
+For every weather station with at least 30 years of measurement history and
+current 10-minute observations, the map shows how close today's temperature is
+to the historical records: daily record (same calendar day), monthly record and
+all-time record — for both heat (Tmax) and cold (Tmin).
+
+## Running with Docker (recommended)
 
 ```sh
 docker compose up -d
 ```
 
-Dann <http://localhost:8000> öffnen. Beim ersten Start lädt der Container die
-komplette DWD-Historie (~340 Stations-ZIPs, ein paar Minuten) automatisch in
-das Volume `recordpy-data`; die Karte füllt sich, sobald der Import fertig ist.
+Then open <http://localhost:8000>. On first start the container automatically
+downloads the full DWD history (~340 station ZIP files, takes a few minutes)
+into the `recordpy-data` volume; the map fills up as soon as the import is done.
 
-Danach laufen zwei Scheduler-Jobs im Container:
+Two scheduler jobs run inside the container:
 
-- **Live-Poll** alle 15 min (`RECORDPY_LIVE_POLL_MINUTES`): heutiges Max/Min
-  aller Stationen aus den DWD-10-Minuten-Daten — das ist der "aktuelle Tagesstand"
-  auf der Karte. Häufiger als ~15 min lohnt nicht, der DWD publiziert die
-  Daten selbst nur mit ~30 min Latenz.
-- **Ingest** täglich um `RECORDPY_INGEST_HOUR`:30 (Default 04:30): Rekorde aus
-  der Tageswert-Historie neu berechnen. Täglich reicht, weil der DWD die
-  `daily/kl`-recent-Daten nur einmal pro Tag aktualisiert.
+- **Live poll** every 15 min (`RECORDPY_LIVE_POLL_MINUTES`): today's max/min
+  for all stations from the DWD 10-minute data — this is the "current state of
+  the day" shown on the map. Polling more often than ~15 min is pointless, as
+  the DWD publishes this data with ~30 min latency.
+- **Ingest** daily at `RECORDPY_INGEST_HOUR`:30 (default 04:30): recompute the
+  records from the daily climate history. Daily is enough because the DWD
+  updates the `daily/kl` recent data only once per day.
 
-## Setup ohne Docker
+Prebuilt images: `ghcr.io/cygnusb/recordpy.de` and `cygnusbn/recordpy.de` (Docker Hub).
+
+## Running without Docker
 
 ```sh
 uv sync
-uv run python -m recordpy.ingest   # einmalig: Historie laden, Rekorde berechnen
-uv run recordpy                    # Webserver auf Port 8000
+uv run python -m recordpy.ingest   # once: download history, compute records
+uv run recordpy                    # web server on port 8000
 ```
 
-## Architektur
+## Architecture
 
-- `dwd.py` — Download + Parsing der DWD-Dateien (Stationslisten, Tageswerte `daily/kl`, 10-Minuten-Werte)
-- `records.py` / `ingest.py` — Rekordberechnung und Import in SQLite (`data/recordpy.sqlite`)
-- `live.py` — Poller für die heutigen Max/Min-Werte (`10_minutes/air_temperature/now`, ~30 min Latenz)
-- `app.py` — FastAPI: `/api/stations` (Karte), `/api/stations/{id}` (Details), statisches Frontend
-- `static/` — Leaflet-Karte (CARTO-Dark-Tiles), Hitze/Kälte-Umschalter, Filter nach Bundesland/Höhe
+- `dwd.py` — download + parsing of the DWD files (station lists, daily values `daily/kl`, 10-minute values)
+- `records.py` / `ingest.py` — record computation and import into SQLite (`data/recordpy.sqlite`)
+- `live.py` — poller for today's max/min values (`10_minutes/air_temperature/now`, ~30 min latency)
+- `app.py` — FastAPI: `/api/stations` (map), `/api/stations/{id}` (details), static frontend
+- `static/` — Leaflet map (CARTO dark tiles), heat/cold toggle, filters by federal state and altitude
 
-## Datenlizenz
+## Data license
 
-Datenbasis: Deutscher Wetterdienst, eigene Elemente ergänzt. Die DWD-Daten stehen
-unter der [GeoNutzV](https://www.gesetze-im-internet.de/geonutzv/) — Quellenvermerk erforderlich.
+Data source: Deutscher Wetterdienst (German Meteorological Service), own
+elements added. The DWD data is provided under the
+[GeoNutzV](https://www.gesetze-im-internet.de/geonutzv/) — attribution required.
 
 ## Tests
 

@@ -1,4 +1,4 @@
-"""FastAPI-App: API für die Karte + statisches Frontend + Live-Scheduler."""
+"""FastAPI app: API for the map + static frontend + live scheduler."""
 
 import logging
 import sqlite3
@@ -21,7 +21,7 @@ conn: sqlite3.Connection | None = None
 
 
 def refresh_records() -> None:
-    """Rekorde aus der DWD-Historie neu berechnen und danach sofort pollen."""
+    """Recompute the records from the DWD history, then poll immediately."""
     ingest.ingest()
     live.poll_all(conn)
 
@@ -32,15 +32,16 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     conn = db.connect()
     scheduler = BackgroundScheduler(timezone=config.LOCAL_TZ)
-    # next_run_time muss timezone-aware sein: naive Zeiten interpretiert
-    # APScheduler in der Scheduler-Zeitzone — in einem UTC-Container gilt der
-    # Job dann als verpasst und wird verworfen.
+    # next_run_time must be timezone-aware: APScheduler interprets naive
+    # datetimes in the scheduler timezone — in a UTC container the job is
+    # then considered misfired and gets discarded.
     now = datetime.now(ZoneInfo(config.LOCAL_TZ))
     db_empty = conn.execute("SELECT count(*) FROM stations").fetchone()[0] == 0
     if db_empty:
-        # Erststart (z. B. frischer Container): Historie im Hintergrund laden,
-        # der Server ist sofort erreichbar und füllt sich, sobald fertig.
-        log.info("Datenbank leer — starte initialen Ingest im Hintergrund")
+        # First start (e.g. fresh container): load the history in the
+        # background; the server is reachable immediately and fills up once
+        # the import is done.
+        log.info("database empty — starting initial ingest in the background")
         scheduler.add_job(refresh_records, next_run_time=now, misfire_grace_time=None)
     else:
         scheduler.add_job(live.poll_all, args=[conn], next_run_time=now, misfire_grace_time=None)
@@ -53,7 +54,7 @@ async def lifespan(app: FastAPI):
         coalesce=True,
         misfire_grace_time=None,
     )
-    # Täglich reicht: die daily/kl-recent-Daten ändern sich beim DWD nur 1x/Tag.
+    # Daily is enough: the DWD updates the daily/kl recent data only once per day.
     scheduler.add_job(
         refresh_records, "cron", hour=config.INGEST_HOUR, minute=30, misfire_grace_time=None
     )
@@ -75,10 +76,10 @@ def _record(row) -> dict | None:
 def _status(
     today_val: float | None, records: dict[str, dict | None], kind: str
 ) -> dict:
-    """Vergleicht den heutigen Wert mit Tages-/Monats-/Allzeitrekord.
+    """Compare today's value against the daily/monthly/all-time record.
 
-    kind="heat": today_val ist Tmax, Rekord gebrochen wenn größer.
-    kind="cold": today_val ist Tmin, Rekord gebrochen wenn kleiner.
+    kind="heat": today_val is tmax, record broken if greater.
+    kind="cold": today_val is tmin, record broken if smaller.
     """
     result = {"level": None, "near": False}
     if today_val is None:

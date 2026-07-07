@@ -1,4 +1,4 @@
-"""Download und Parsing der DWD-Open-Data-Dateien (CDC)."""
+"""Download and parsing of the DWD open data files (CDC)."""
 
 import io
 import re
@@ -16,7 +16,7 @@ MISSING = -999.0
 
 @dataclass(frozen=True)
 class StationInfo:
-    id: str  # fünfstellig, z. B. "02667"
+    id: str  # five digits, e.g. "02667"
     von: date
     bis: date
     altitude: int
@@ -40,14 +40,14 @@ _STATION_RE = re.compile(
 
 
 def parse_station_list(text: str) -> list[StationInfo]:
-    """Parst eine DWD-Stationsbeschreibungsdatei (latin-1-dekodierter Text)."""
+    """Parse a DWD station description file (latin-1 decoded text)."""
     stations = []
-    for line in text.splitlines()[2:]:  # Header + Trennzeile überspringen
+    for line in text.splitlines()[2:]:  # skip header and separator line
         m = _STATION_RE.match(line.rstrip())
         if not m:
             continue
-        # Name und Bundesland sind durch >=2 Spaces getrennt; Namen können
-        # einzelne Spaces enthalten ("Donaueschingen (Landeplatz)").
+        # Name and federal state are separated by >=2 spaces; names may
+        # contain single spaces ("Donaueschingen (Landeplatz)").
         rest = re.split(r"\s{2,}", m.group("rest"))
         stations.append(
             StationInfo(
@@ -65,7 +65,7 @@ def parse_station_list(text: str) -> list[StationInfo]:
 
 
 def parse_daily_kl(data: bytes) -> list[DailyValue]:
-    """Extrahiert TXK/TNK aus einer produkt_klima_tag-Datei (Rohbytes)."""
+    """Extract TXK/TNK from a produkt_klima_tag file (raw bytes)."""
     lines = data.decode("latin-1").splitlines()
     header = [h.strip() for h in lines[0].split(";")]
     i_date, i_txk, i_tnk = header.index("MESS_DATUM"), header.index("TXK"), header.index("TNK")
@@ -87,7 +87,7 @@ def parse_daily_kl(data: bytes) -> list[DailyValue]:
 
 
 def parse_10min_tu(data: bytes) -> list[tuple[datetime, float]]:
-    """Extrahiert (Zeitstempel UTC, TT_10) aus einer produkt_zehn_now_tu-Datei."""
+    """Extract (UTC timestamp, TT_10) pairs from a produkt_zehn_now_tu file."""
     lines = data.decode("latin-1").splitlines()
     header = [h.strip() for h in lines[0].split(";")]
     i_date, i_tt = header.index("MESS_DATUM"), header.index("TT_10")
@@ -144,8 +144,8 @@ class DwdClient:
         return parse_station_list(data.decode("latin-1"))
 
     def _historical_zip_name(self, station_id: str) -> str | None:
-        """Die historical-Dateinamen enthalten den Datenzeitraum und müssen
-        aus dem Verzeichnisindex ermittelt werden."""
+        """The historical file names contain the data period and have to be
+        looked up in the directory index."""
         if self._historical_index is None:
             html = self._get(config.DAILY_KL_HISTORICAL).decode("latin-1")
             self._historical_index = {
@@ -155,7 +155,7 @@ class DwdClient:
         return self._historical_index.get(station_id)
 
     def daily_values(self, station_id: str) -> list[DailyValue]:
-        """Komplette Tageswert-Reihe einer Station (historical + recent)."""
+        """Complete daily-value series of a station (historical + recent)."""
         values: dict[date, DailyValue] = {}
         zip_name = self._historical_zip_name(station_id)
         if zip_name:
@@ -168,7 +168,7 @@ class DwdClient:
             data = None
         if data:
             for v in parse_daily_kl(read_zip_member(data)):
-                values[v.day] = v  # recent überschreibt historical am Übergang
+                values[v.day] = v  # recent overrides historical at the boundary
         return [values[d] for d in sorted(values)]
 
     def now_values(self, station_id: str) -> list[tuple[datetime, float]]:

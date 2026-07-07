@@ -14,15 +14,15 @@ TU_NOW = f"{DWD_BASE}/10_minutes/air_temperature/now/"
 KL_STATIONS_FILE = "KL_Tageswerte_Beschreibung_Stationen.txt"
 TU_NOW_STATIONS_FILE = "zehn_now_tu_Beschreibung_Stationen.txt"
 
-# Stationen ohne mindestens so viele Jahre Tageswert-Historie werden ignoriert.
+# Stations with less than this many years of daily-value history are ignored.
 MIN_YEARS = 30
-# Innerhalb dieser Distanz zum Rekord gilt der Status "near".
+# Within this distance to a record, a station gets the "near" status.
 NEAR_RECORD_DELTA = 1.0
 
 LOCAL_TZ = "Europe/Berlin"
 
 DOWNLOAD_CONCURRENCY = 4
 LIVE_POLL_MINUTES = int(os.environ.get("RECORDPY_LIVE_POLL_MINUTES", "15"))
-# Der DWD aktualisiert daily/kl recent nur einmal täglich — ein täglicher
-# Ingest reicht, um die Rekorde aktuell zu halten.
+# The DWD updates daily/kl recent only once per day — a daily ingest is
+# enough to keep the records current.
 INGEST_HOUR = int(os.environ.get("RECORDPY_INGEST_HOUR", "4"))

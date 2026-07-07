@@ -1,4 +1,4 @@
-"""Berechnung der Temperaturrekorde aus einer Tageswert-Reihe."""
+"""Computation of temperature records from a daily-value series."""
 
 from dataclasses import dataclass, field
 from datetime import date
@@ -14,7 +14,7 @@ class Record:
 
 @dataclass
 class StationRecords:
-    # Schlüssel: (Monat, Tag) bzw. Monat
+    # keys: (month, day) resp. month
     daily_high: dict[tuple[int, int], Record] = field(default_factory=dict)
     daily_low: dict[tuple[int, int], Record] = field(default_factory=dict)
     monthly_high: dict[int, Record] = field(default_factory=dict)
@@ -26,7 +26,7 @@ class StationRecords:
 
 
 def _update_high(current: Record | None, value: float, day: date) -> Record:
-    # Bei Gleichstand gewinnt das jüngere Datum ("Rekord eingestellt").
+    # On a tie the more recent date wins ("record equaled").
     if current is None or value >= current.value:
         return Record(value, day)
     return current

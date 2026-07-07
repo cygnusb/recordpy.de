@@ -5,7 +5,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 WORKDIR /app
 
-# Dependencies getrennt vom Projektcode installieren (Layer-Cache)
+# Install dependencies separately from the project code (layer cache)
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 

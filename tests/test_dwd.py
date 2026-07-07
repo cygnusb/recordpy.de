@@ -24,7 +24,7 @@ def test_parse_station_list():
     assert aach.von == date(1937, 1, 1)
     assert aach.altitude == 478
     assert abs(aach.lat - 47.8413) < 1e-6
-    # Stationsname mit Leerzeichen/Klammern
+    # station name containing spaces/parentheses
     donaueschingen = next(s for s in stations if s.id == "00011")
     assert donaueschingen.name == "Donaueschingen (Landeplatz)"
 
@@ -32,7 +32,7 @@ def test_parse_station_list():
 def test_parse_daily_kl():
     values = parse_daily_kl((FIXTURES / "produkt_klima_tag_sample.txt").read_bytes())
     assert values[0] == DailyValue(day=date(1957, 9, 1), tmax=16.8, tmin=11.9)
-    # SDK ist -999 in der ersten Zeile — darf TXK/TNK nicht beeinflussen
+    # SDK is -999 in the first line — must not affect TXK/TNK
     assert all(v.tmax is None or -60 < v.tmax < 60 for v in values)
 
 

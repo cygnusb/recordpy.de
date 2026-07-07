@@ -1,6 +1,6 @@
-"""Initialimport: Stationsauswahl, Historie laden, Rekorde in die DB schreiben.
+"""Initial import: select stations, download history, write records to the DB.
 
-Aufruf: python -m recordpy.ingest [--limit N]
+Usage: python -m recordpy.ingest [--limit N]
 """
 
 import argparse
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 def select_stations(client: DwdClient) -> list[StationInfo]:
-    """Aktive Stationen mit Live-Daten und ausreichend langer Historie."""
+    """Active stations with live data and a sufficiently long history."""
     live_ids = {s.id for s in client.tu_now_stations()}
     cutoff_active = date.today() - timedelta(days=14)
     selected = []
@@ -83,7 +83,7 @@ def ingest(limit: int | None = None) -> None:
     stations = select_stations(client)
     if limit:
         stations = stations[:limit]
-    log.info("%d Stationen ausgewählt", len(stations))
+    log.info("%d stations selected", len(stations))
 
     def process(station: StationInfo) -> tuple[StationInfo, StationRecords]:
         return station, compute_records(client.daily_values(station.id))
@@ -96,7 +96,7 @@ def ingest(limit: int | None = None) -> None:
                 station, records = future.result()
             except Exception:
                 failed += 1
-                log.exception("Station fehlgeschlagen")
+                log.exception("station failed")
                 continue
             if records.first_year is None:
                 failed += 1
@@ -104,16 +104,16 @@ def ingest(limit: int | None = None) -> None:
             store_station(conn, station, records)
             done += 1
             if done % 25 == 0:
-                log.info("%d/%d Stationen importiert", done, len(stations))
-    log.info("Fertig: %d importiert, %d fehlgeschlagen", done, failed)
+                log.info("%d/%d stations imported", done, len(stations))
+    log.info("done: %d imported, %d failed", done, failed)
     client.close()
     conn.close()
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    parser = argparse.ArgumentParser(description="DWD-Historie importieren und Rekorde berechnen")
-    parser.add_argument("--limit", type=int, help="nur die ersten N Stationen (zum Testen)")
+    parser = argparse.ArgumentParser(description="Import DWD history and compute records")
+    parser.add_argument("--limit", type=int, help="only the first N stations (for testing)")
     args = parser.parse_args()
     ingest(limit=args.limit)
 
