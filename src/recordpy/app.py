@@ -11,7 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 
-from . import config, db, live
+from . import config, db, ingest, live
 
 log = logging.getLogger(__name__)
 
@@ -20,18 +20,42 @@ STATIC_DIR = Path(__file__).parent / "static"
 conn: sqlite3.Connection | None = None
 
 
+def refresh_records() -> None:
+    """Rekorde aus der DWD-Historie neu berechnen und danach sofort pollen."""
+    ingest.ingest()
+    live.poll_all(conn)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global conn
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     conn = db.connect()
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone=config.LOCAL_TZ)
+    # next_run_time muss timezone-aware sein: naive Zeiten interpretiert
+    # APScheduler in der Scheduler-Zeitzone — in einem UTC-Container gilt der
+    # Job dann als verpasst und wird verworfen.
+    now = datetime.now(ZoneInfo(config.LOCAL_TZ))
+    db_empty = conn.execute("SELECT count(*) FROM stations").fetchone()[0] == 0
+    if db_empty:
+        # Erststart (z. B. frischer Container): Historie im Hintergrund laden,
+        # der Server ist sofort erreichbar und füllt sich, sobald fertig.
+        log.info("Datenbank leer — starte initialen Ingest im Hintergrund")
+        scheduler.add_job(refresh_records, next_run_time=now, misfire_grace_time=None)
+    else:
+        scheduler.add_job(live.poll_all, args=[conn], next_run_time=now, misfire_grace_time=None)
     scheduler.add_job(
         live.poll_all,
         "interval",
         args=[conn],
         minutes=config.LIVE_POLL_MINUTES,
-        next_run_time=datetime.now(),  # sofort beim Start einmal pollen
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=None,
+    )
+    # Täglich reicht: die daily/kl-recent-Daten ändern sich beim DWD nur 1x/Tag.
+    scheduler.add_job(
+        refresh_records, "cron", hour=config.INGEST_HOUR, minute=30, misfire_grace_time=None
     )
     scheduler.start()
     yield

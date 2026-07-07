@@ -8,20 +8,33 @@ Für jede Wetterstation mit mindestens 30 Jahren Messhistorie und aktuellen
 historischen Rekorden liegt: Tagesrekord (gleicher Kalendertag), Monatsrekord
 und Allzeitrekord — jeweils für Hitze (Tmax) und Kälte (Tmin).
 
-## Setup
+## Betrieb mit Docker (empfohlen)
+
+```sh
+docker compose up -d
+```
+
+Dann <http://localhost:8000> öffnen. Beim ersten Start lädt der Container die
+komplette DWD-Historie (~340 Stations-ZIPs, ein paar Minuten) automatisch in
+das Volume `recordpy-data`; die Karte füllt sich, sobald der Import fertig ist.
+
+Danach laufen zwei Scheduler-Jobs im Container:
+
+- **Live-Poll** alle 15 min (`RECORDPY_LIVE_POLL_MINUTES`): heutiges Max/Min
+  aller Stationen aus den DWD-10-Minuten-Daten — das ist der "aktuelle Tagesstand"
+  auf der Karte. Häufiger als ~15 min lohnt nicht, der DWD publiziert die
+  Daten selbst nur mit ~30 min Latenz.
+- **Ingest** täglich um `RECORDPY_INGEST_HOUR`:30 (Default 04:30): Rekorde aus
+  der Tageswert-Historie neu berechnen. Täglich reicht, weil der DWD die
+  `daily/kl`-recent-Daten nur einmal pro Tag aktualisiert.
+
+## Setup ohne Docker
 
 ```sh
 uv sync
-
-# Einmalig (und danach z. B. monatlich): Historie laden, Rekorde berechnen.
-# Lädt ~340 Stations-ZIPs vom DWD (Cache in data/cache/), dauert ein paar Minuten.
-uv run python -m recordpy.ingest
-
-# Webserver starten (pollt alle 15 min die DWD-Live-Daten)
-uv run recordpy
+uv run python -m recordpy.ingest   # einmalig: Historie laden, Rekorde berechnen
+uv run recordpy                    # Webserver auf Port 8000
 ```
-
-Dann <http://localhost:8000> öffnen.
 
 ## Architektur
 

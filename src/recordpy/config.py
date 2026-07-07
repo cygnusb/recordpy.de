@@ -1,7 +1,8 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = Path(os.environ.get("RECORDPY_DATA_DIR", BASE_DIR / "data"))
 CACHE_DIR = DATA_DIR / "cache"
 DB_PATH = DATA_DIR / "recordpy.sqlite"
 
@@ -21,4 +22,7 @@ NEAR_RECORD_DELTA = 1.0
 LOCAL_TZ = "Europe/Berlin"
 
 DOWNLOAD_CONCURRENCY = 4
-LIVE_POLL_MINUTES = 15
+LIVE_POLL_MINUTES = int(os.environ.get("RECORDPY_LIVE_POLL_MINUTES", "15"))
+# Der DWD aktualisiert daily/kl recent nur einmal täglich — ein täglicher
+# Ingest reicht, um die Rekorde aktuell zu halten.
+INGEST_HOUR = int(os.environ.get("RECORDPY_INGEST_HOUR", "4"))

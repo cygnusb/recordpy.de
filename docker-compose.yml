@@ -1,0 +1,15 @@
+services:
+  recordpy:
+    build: .
+    image: recordpy
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - recordpy-data:/data
+    environment:
+      RECORDPY_LIVE_POLL_MINUTES: "15"
+      RECORDPY_INGEST_HOUR: "4"
+
+volumes:
+  recordpy-data:
