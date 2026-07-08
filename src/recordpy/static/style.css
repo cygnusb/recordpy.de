@@ -34,13 +34,18 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 .legend .sep { color: #3a4557; }
 
 .timeline { display: inline-flex; align-items: center; gap: 6px; }
-.timeline input[type=range] { width: 180px; accent-color: #ff8c42; }
-#timeline-label { min-width: 90px; color: #c8d0dd; font-variant-numeric: tabular-nums; }
-#timeline-now {
-  background: #3a4557; color: #fff; border: none; border-radius: 6px;
-  padding: 3px 10px; cursor: pointer; font-size: 0.8rem;
+.timeline input[type=range] { width: 200px; accent-color: #ff8c42; }
+.timeline.tl-past input[type=range] { accent-color: #ffd166; }
+.tl-caption { color: #9aa4b5; }
+.tl-end { color: #6b7688; font-size: 0.75rem; }
+#timeline-label {
+  color: #ffd166; font-weight: 600; font-variant-numeric: tabular-nums;
 }
-#timeline-now.hidden, #filter-records-label.hidden { display: none; }
+#timeline-now {
+  background: #ff8c42; color: #14181f; font-weight: 600; border: none;
+  border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem;
+}
+#timeline-now.hidden, #timeline-label.hidden, #filter-records-label.hidden { display: none; }
 #filter-records-label input { accent-color: #ff8c42; }
 
 .badge-near { background: transparent; border: 1.5px solid; }

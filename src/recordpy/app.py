@@ -1,5 +1,6 @@
 """FastAPI app: API for the map + static frontend + live scheduler."""
 
+import importlib.metadata
 import logging
 import sqlite3
 from contextlib import asynccontextmanager
@@ -17,6 +18,11 @@ from . import config, db, ingest, live
 log = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
+
+try:
+    VERSION = importlib.metadata.version("recordpy")
+except importlib.metadata.PackageNotFoundError:
+    VERSION = "dev"
 
 conn: sqlite3.Connection | None = None
 
@@ -253,8 +259,10 @@ def index():
     imprint_link = (
         '<a href="impressum">Impressum &amp; Datenschutz</a> · ' if config.IMPRINT_HTML else ""
     )
-    return html.replace("{{BASE_URL}}", config.BASE_URL).replace(
-        "{{IMPRINT_LINK}}", imprint_link
+    return (
+        html.replace("{{BASE_URL}}", config.BASE_URL)
+        .replace("{{IMPRINT_LINK}}", imprint_link)
+        .replace("{{VERSION}}", VERSION)
     )
 
 

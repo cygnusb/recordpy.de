@@ -289,15 +289,16 @@ function timelineDate() {
 }
 function updateTimelineLabel() {
   const label = document.getElementById("timeline-label");
-  if (timelineOffset === 0) {
-    label.textContent = "jetzt";
-  } else {
+  const atNow = timelineOffset === 0;
+  if (!atNow) {
     const d = timelineDate();
-    label.textContent = d.toLocaleString("de-DE", {
+    label.textContent = "→ " + d.toLocaleString("de-DE", {
       weekday: "short", hour: "2-digit", minute: "2-digit",
     }) + " Uhr";
   }
-  document.getElementById("timeline-now").classList.toggle("hidden", timelineOffset === 0);
+  label.classList.toggle("hidden", atNow);
+  document.getElementById("timeline-now").classList.toggle("hidden", atNow);
+  document.querySelector(".timeline").classList.toggle("tl-past", !atNow);
 }
 
 async function load() {
@@ -370,6 +371,9 @@ document.getElementById("stations-table").addEventListener("click", (ev) => {
 });
 
 const timeline = document.getElementById("timeline");
+// Browser stellen Formularwerte beim Reload wieder her — der Regler stünde
+// dann nicht auf "jetzt", obwohl die App live lädt. Explizit zurücksetzen.
+timeline.value = 0;
 timeline.addEventListener("input", () => {
   timelineOffset = Number(timeline.value);
   updateTimelineLabel();
