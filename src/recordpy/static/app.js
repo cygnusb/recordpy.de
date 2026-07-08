@@ -382,18 +382,19 @@ document.getElementById("timeline-now").addEventListener("click", () => {
   load();
 });
 
-// About-Sektion: nur beim ersten Besuch aufgeklappt
-const aboutBody = document.getElementById("about-body");
-const aboutArrow = document.getElementById("about-arrow");
+// About-Sektion: nur beim ersten Besuch aufgeklappt; eingeklappt verschwindet
+// sie komplett und wird über den Footer-Link wieder geöffnet
+const aboutSection = document.getElementById("about");
 function setAbout(open) {
-  aboutBody.classList.toggle("hidden", !open);
-  aboutArrow.textContent = open ? "▾" : "▸";
+  aboutSection.classList.toggle("hidden", !open);
   setTimeout(() => map.invalidateSize(), 50);
 }
 setAbout(!localStorage.getItem("recordpyAboutSeen"));
 localStorage.setItem("recordpyAboutSeen", "1");
-document.getElementById("about-toggle").addEventListener("click", () => {
-  setAbout(aboutBody.classList.contains("hidden"));
+document.getElementById("about-toggle").addEventListener("click", () => setAbout(false));
+document.getElementById("about-open").addEventListener("click", (ev) => {
+  ev.preventDefault();
+  setAbout(true);
 });
 
 updateTimelineLabel();
