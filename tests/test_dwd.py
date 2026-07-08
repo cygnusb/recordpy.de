@@ -1,14 +1,14 @@
 from datetime import date, timezone
 from pathlib import Path
 
-from recordpy.dwd import (
+from wetterrekord.dwd import (
     DailyValue,
     parse_10min_tu,
     parse_daily_kl,
     parse_station_list,
     read_zip_member,
 )
-from recordpy.records import compute_records, quinzaine_of
+from wetterrekord.records import compute_records, quinzaine_of
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -84,7 +84,7 @@ def test_quinzaine_records():
 
 
 def test_status_levels():
-    from recordpy.app import _status
+    from wetterrekord.app import _status
 
     records = {
         "day": {"value": 30.0, "date": "1990-07-07"},

@@ -1,6 +1,6 @@
 """Initial import: select stations, download history, write records to the DB.
 
-Usage: python -m recordpy.ingest [--limit N]
+Usage: python -m wetterrekord.ingest [--limit N]
 """
 
 import argparse

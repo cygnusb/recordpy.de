@@ -45,7 +45,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            docker.io/cygnusbn/recordpy.de
+            docker.io/cygnusbn/wetterrekord
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}

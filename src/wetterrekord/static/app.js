@@ -393,8 +393,8 @@ function setAbout(open) {
   aboutSection.classList.toggle("hidden", !open);
   setTimeout(() => map.invalidateSize(), 50);
 }
-setAbout(!localStorage.getItem("recordpyAboutSeen"));
-localStorage.setItem("recordpyAboutSeen", "1");
+setAbout(!localStorage.getItem("wetterrekordAboutSeen"));
+localStorage.setItem("wetterrekordAboutSeen", "1");
 document.getElementById("about-toggle").addEventListener("click", () => setAbout(false));
 document.getElementById("about-open").addEventListener("click", (ev) => {
   ev.preventDefault();

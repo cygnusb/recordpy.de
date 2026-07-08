@@ -1,6 +1,6 @@
 [project]
-name = "recordpy"
-version = "0.4.2"
+name = "wetterrekord"
+version = "0.5.0"
 description = "Temperature records in Germany — live map based on DWD open data"
 readme = "README.md"
 authors = [
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-recordpy = "recordpy:main"
+wetterrekord = "wetterrekord:main"
 
 [build-system]
 requires = ["uv_build>=0.9.27,<0.10.0"]

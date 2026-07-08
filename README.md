@@ -1,10 +1,10 @@
-# recordpy.de
+# wetterrekord.de
 
-**➡️ Live: [https://recordpy.de](https://recordpy.de)**
+**➡️ Live: [https://wetterrekord.de](https://wetterrekord.de)**
 
-[![CI](https://github.com/cygnusb/recordpy.de/actions/workflows/ci.yml/badge.svg)](https://github.com/cygnusb/recordpy.de/actions/workflows/ci.yml)
-[![GHCR](https://img.shields.io/badge/ghcr.io-cygnusb%2Frecordpy.de-blue?logo=github)](https://github.com/cygnusb/recordpy.de/pkgs/container/recordpy.de)
-[![Docker Hub](https://img.shields.io/docker/pulls/cygnusbn/recordpy.de?logo=docker)](https://hub.docker.com/r/cygnusbn/recordpy.de)
+[![CI](https://github.com/cygnusb/wetterrekord/actions/workflows/ci.yml/badge.svg)](https://github.com/cygnusb/wetterrekord/actions/workflows/ci.yml)
+[![GHCR](https://img.shields.io/badge/ghcr.io-cygnusb%2Fwetterrekord-blue?logo=github)](https://github.com/cygnusb/wetterrekord/pkgs/container/wetterrekord.de)
+[![Docker Hub](https://img.shields.io/docker/pulls/cygnusbn/wetterrekord?logo=docker)](https://hub.docker.com/r/cygnusbn/wetterrekord)
 [![Python](https://img.shields.io/badge/python-3.14-blue?logo=python&logoColor=white)](pyproject.toml)
 
 Live map of temperature records in Germany — inspired by [recordpy.fr](https://recordpy.fr),
@@ -24,41 +24,41 @@ docker compose up -d
 
 Then open <http://localhost:8000>. On first start the container automatically
 downloads the full DWD history (~340 station ZIP files, takes a few minutes)
-into the `recordpy-data` volume; the map fills up as soon as the import is done.
+into the `wetterrekord-data` volume; the map fills up as soon as the import is done.
 
 Two scheduler jobs run inside the container:
 
-- **Live poll** every 15 min (`RECORDPY_LIVE_POLL_MINUTES`): today's max/min
+- **Live poll** every 15 min (`WETTERREKORD_LIVE_POLL_MINUTES`): today's max/min
   for all stations from the DWD 10-minute data — this is the "current state of
   the day" shown on the map. Polling more often than ~15 min is pointless, as
   the DWD publishes this data with ~30 min latency.
-- **Ingest** daily at `RECORDPY_INGEST_HOUR`:30 (default 04:30): recompute the
+- **Ingest** daily at `WETTERREKORD_INGEST_HOUR`:30 (default 04:30): recompute the
   records from the daily climate history. Daily is enough because the DWD
   updates the `daily/kl` recent data only once per day.
 
-Prebuilt images: `ghcr.io/cygnusb/recordpy.de` and `cygnusbn/recordpy.de` (Docker Hub).
+Prebuilt images: `ghcr.io/cygnusb/wetterrekord` and `cygnusbn/wetterrekord` (Docker Hub).
 
 ### Configuration
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `RECORDPY_BASE_URL` | `https://recordpy.w359.de` | public base URL (canonical link, sitemap, OG tags) |
-| `RECORDPY_IMPRINT_HTML` | *(unset)* | HTML fragment with the operator's legal notice; the `/impressum` page (imprint + privacy policy, German) and its footer link only appear when set |
-| `RECORDPY_LIVE_POLL_MINUTES` | `15` | live poll interval |
-| `RECORDPY_INGEST_HOUR` | `4` | daily record recomputation hour (local time) |
+| `WETTERREKORD_BASE_URL` | `https://wetterrekord.de` | public base URL (canonical link, sitemap, OG tags) |
+| `WETTERREKORD_IMPRINT_HTML` | *(unset)* | HTML fragment with the operator's legal notice; the `/impressum` page (imprint + privacy policy, German) and its footer link only appear when set |
+| `WETTERREKORD_LIVE_POLL_MINUTES` | `15` | live poll interval |
+| `WETTERREKORD_INGEST_HOUR` | `4` | daily record recomputation hour (local time) |
 
 ## Running without Docker
 
 ```sh
 uv sync
-uv run python -m recordpy.ingest   # once: download history, compute records
-uv run recordpy                    # web server on port 8000
+uv run python -m wetterrekord.ingest   # once: download history, compute records
+uv run wetterrekord                    # web server on port 8000
 ```
 
 ## Architecture
 
 - `dwd.py` — download + parsing of the DWD files (station lists, daily values `daily/kl`, 10-minute values)
-- `records.py` / `ingest.py` — record computation and import into SQLite (`data/recordpy.sqlite`)
+- `records.py` / `ingest.py` — record computation and import into SQLite (`data/wetterrekord.sqlite`)
 - `live.py` — poller for today's max/min values (`10_minutes/air_temperature/now`, ~30 min latency)
 - `app.py` — FastAPI: `/api/stations` (map), `/api/stations/{id}` (details), static frontend
 - `static/` — Leaflet map (CARTO dark tiles), heat/cold toggle, filters by federal state and altitude

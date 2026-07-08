@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).parent / "static"
 
 try:
-    VERSION = importlib.metadata.version("recordpy")
+    VERSION = importlib.metadata.version("wetterrekord")
 except importlib.metadata.PackageNotFoundError:
     VERSION = "dev"
 
@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI):
     conn.close()
 
 
-app = FastAPI(title="recordpy.de", lifespan=lifespan)
+app = FastAPI(title="wetterrekord.de", lifespan=lifespan)
 
 
 def _record(row) -> dict | None:
@@ -271,7 +271,7 @@ IMPRINT_PAGE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Impressum &amp; Datenschutz | recordpy.de</title>
+<title>Impressum &amp; Datenschutz | wetterrekord.de</title>
 <style>
 body {{ background: #14181f; color: #e8e8e8; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
        max-width: 46rem; margin: 0 auto; padding: 24px 16px; line-height: 1.6; font-size: 0.95rem; }}

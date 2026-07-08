@@ -1,15 +1,15 @@
 services:
-  recordpy:
+  wetterrekord:
     build: .
-    image: recordpy
+    image: wetterrekord
     restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - recordpy-data:/data
+      - wetterrekord-data:/data
     environment:
-      RECORDPY_LIVE_POLL_MINUTES: "15"
-      RECORDPY_INGEST_HOUR: "4"
+      WETTERREKORD_LIVE_POLL_MINUTES: "15"
+      WETTERREKORD_INGEST_HOUR: "4"
 
 volumes:
-  recordpy-data:
+  wetterrekord-data:

@@ -14,9 +14,9 @@ COPY README.md ./
 RUN uv sync --frozen --no-dev
 
 ENV PATH="/app/.venv/bin:$PATH" \
-    RECORDPY_DATA_DIR=/data
+    WETTERREKORD_DATA_DIR=/data
 
 VOLUME /data
 EXPOSE 8000
 
-CMD ["uvicorn", "recordpy.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "wetterrekord.app:app", "--host", "0.0.0.0", "--port", "8000"]

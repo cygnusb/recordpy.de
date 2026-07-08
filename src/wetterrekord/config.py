@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = Path(os.environ.get("RECORDPY_DATA_DIR", BASE_DIR / "data"))
+DATA_DIR = Path(os.environ.get("WETTERREKORD_DATA_DIR", BASE_DIR / "data"))
 CACHE_DIR = DATA_DIR / "cache"
-DB_PATH = DATA_DIR / "recordpy.sqlite"
+DB_PATH = DATA_DIR / "wetterrekord.sqlite"
 
 DWD_BASE = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate"
 DAILY_KL_HISTORICAL = f"{DWD_BASE}/daily/kl/historical/"
@@ -22,14 +22,14 @@ NEAR_RECORD_DELTA = 1.0
 LOCAL_TZ = "Europe/Berlin"
 
 # Public base URL, used for canonical link, sitemap and Open Graph tags.
-BASE_URL = os.environ.get("RECORDPY_BASE_URL", "https://recordpy.w359.de").rstrip("/")
+BASE_URL = os.environ.get("WETTERREKORD_BASE_URL", "https://wetterrekord.de").rstrip("/")
 
 # HTML fragment with the site operator's imprint (legal notice). The imprint/
 # privacy page and its footer link only appear when this is set.
-IMPRINT_HTML = os.environ.get("RECORDPY_IMPRINT_HTML", "")
+IMPRINT_HTML = os.environ.get("WETTERREKORD_IMPRINT_HTML", "")
 
 DOWNLOAD_CONCURRENCY = 4
-LIVE_POLL_MINUTES = int(os.environ.get("RECORDPY_LIVE_POLL_MINUTES", "15"))
+LIVE_POLL_MINUTES = int(os.environ.get("WETTERREKORD_LIVE_POLL_MINUTES", "15"))
 # The DWD updates daily/kl recent only once per day — a daily ingest is
 # enough to keep the records current.
-INGEST_HOUR = int(os.environ.get("RECORDPY_INGEST_HOUR", "4"))
+INGEST_HOUR = int(os.environ.get("WETTERREKORD_INGEST_HOUR", "4"))

@@ -4,8 +4,8 @@ from zoneinfo import ZoneInfo
 
 from starlette.testclient import TestClient
 
-from recordpy import config, db
-from recordpy.app import app, past_values
+from wetterrekord import config, db
+from wetterrekord.app import app, past_values
 
 TZ = ZoneInfo("Europe/Berlin")
 
