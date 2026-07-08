@@ -1,6 +1,6 @@
 [project]
 name = "recordpy"
-version = "0.4.1"
+version = "0.4.2"
 description = "Temperature records in Germany — live map based on DWD open data"
 readme = "README.md"
 authors = [
