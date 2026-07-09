@@ -43,8 +43,7 @@
       <button id="mode-cold">❄️ Kälte</button>
       <button id="mode-gust">💨 Böen</button>
       <button id="mode-precip">🌧️ Regen</button>
-      <button id="mode-phigh" title="höchster Luftdruck">⬆️ Druck</button>
-      <button id="mode-plow" title="tiefster Luftdruck">⬇️ Druck</button>
+      <button id="mode-press" title="Luftdruck-Tagesmittel auf Meereshöhe, Hoch- und Tiefdruckrekorde">🌀 Druck</button>
     </div>
     <div class="mode-toggle">
       <button id="view-map" class="active">Karte</button>
@@ -64,8 +63,10 @@
         <option value="-96"></option><option value="-48"></option><option value="0"></option>
       </datalist>
       <span class="tl-end">jetzt</span>
-      <span id="timeline-label" class="hidden"></span>
-      <button id="timeline-now" class="hidden">⏵ zurück zu live</button>
+      <span class="tl-extra">
+        <span id="timeline-label" class="hidden"></span>
+        <button id="timeline-now" class="hidden">⏵ zurück zu live</button>
+      </span>
     </span>
   </div>
   <div class="legend" id="legend"></div>

@@ -22,17 +22,11 @@ const RAIN_COLORS = {
   quinzaine: "#2bb5a0",
   day: "#7fd8c8",
 };
-const PHIGH_COLORS = {
+const PRESS_COLORS = {
   alltime: "#7a5c00",
   month: "#c7a500",
   quinzaine: "#ddc233",
   day: "#f3e57e",
-};
-const PLOW_COLORS = {
-  alltime: "#59103f",
-  month: "#ad1457",
-  quinzaine: "#d81b60",
-  day: "#f48fb1",
 };
 const NONE_COLOR = "#5a6577";
 const NODATA_COLOR = "#333a48";
@@ -101,17 +95,29 @@ const MODES = {
     colors: RAIN_COLORS, value: (st) => st.params.precip.value, records: (st) => st.params.precip.records,
     status: (st) => st.params.precip.status, fmt: fmtRain, short: fmtRain, scale: RAIN_SCALE,
   },
-  phigh: {
-    icon: "⬆️", noun: "Hochdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel auf Meereshöhe (bisher)", nearText: "≤2 hPa",
-    colors: PHIGH_COLORS, value: (st) => st.params.phigh.value, records: (st) => st.params.phigh.records,
-    status: (st) => st.params.phigh.status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
-  },
-  plow: {
-    icon: "⬇️", noun: "Tiefdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel auf Meereshöhe (bisher)", nearText: "≤2 hPa",
-    colors: PLOW_COLORS, value: (st) => st.params.plow.value, records: (st) => st.params.plow.records,
-    status: (st) => st.params.plow.status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
+  press: {
+    // ein Tagesmittelwert, aber zwei Rekordrichtungen (Hoch-/Tiefdruck):
+    // Status und Rekordtabelle kommen von der "gewinnenden" Richtung
+    icon: "🌀", noun: "Luftdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel auf Meereshöhe (bisher)", nearText: "≤2 hPa",
+    colors: PRESS_COLORS, value: (st) => st.params.phigh.value, records: (st) => pressWinner(st).records,
+    status: (st) => pressWinner(st).status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
   },
 };
+
+const LEVEL_RANK = { alltime: 4, month: 3, quinzaine: 2, day: 1 };
+// Hoch- oder Tiefdruck — welcher Rekordvergleich "gewinnt" für Marker/Badge?
+function pressWinner(st) {
+  const hi = { ...st.params.phigh, kind: "high" };
+  const lo = { ...st.params.plow, kind: "low" };
+  const pick = (get) => {
+    const h = get(hi.status);
+    const l = get(lo.status);
+    if (h && (!l || LEVEL_RANK[h] >= LEVEL_RANK[l])) return hi;
+    if (l) return lo;
+    return null;
+  };
+  return pick((s) => s.level) || pick((s) => s.near) || hi;
+}
 
 let mode = "heat";
 let view = "map";
@@ -323,13 +329,15 @@ function statusInfo(st) {
     return { type: "nodata", level: null };
   }
   const s = stStatus(st);
-  if (s.level) return { type: "broken", level: s.level };
-  if (s.near) return { type: "near", level: s.near };
+  const kind = mode === "press" ? pressWinner(st).kind : null;
+  if (s.level) return { type: "broken", level: s.level, kind };
+  if (s.near) return { type: "near", level: s.near, kind };
   return { type: "none", level: null };
 }
 function badgeText(info) {
-  if (info.type === "broken") return `${LEVEL_LABEL_LONG[info.level]} gebrochen`;
-  if (info.type === "near") return `nah am ${LEVEL_LABEL_LONG[info.level]}`;
+  const prefix = info.kind ? (info.kind === "high" ? "Hochdruck: " : "Tiefdruck: ") : "";
+  if (info.type === "broken") return `${prefix}${LEVEL_LABEL_LONG[info.level]} gebrochen`;
+  if (info.type === "near") return `${prefix}nah am ${LEVEL_LABEL_LONG[info.level]}`;
   if (info.type === "nodata") return "keine Daten";
   return "kein Rekord";
 }
@@ -516,24 +524,30 @@ function showPanel(st) {
   selectedStationId = st.id;
   const c = levelColors();
   const info = statusInfo(st);
-  const recs = stRecords(st);
-  const rows = [
-    ["day", "heutiger Kalendertag"],
-    ["quinzaine", "Halbmonat"],
-    ["month", "laufender Monat"],
-    ["alltime", "Allzeit"],
-  ].filter(([lvl]) => recs[lvl])
-    .map(([lvl, label]) => {
-      const r = recs[lvl];
-      let mark = "";
-      if (info.level === lvl) {
-        mark = info.type === "broken"
-          ? `<span style="color:${c[lvl]}">●</span> `
-          : `<span style="color:${c[lvl]}">○</span> `;
-      }
-      return `<tr><td>${mark}${label}</td><td class="val">${MODES[mode].fmt(r.value)}</td><td class="date">${fmtDate(r.date)}</td></tr>`;
-    })
-    .join("");
+
+  function recordTable(title, recs, status) {
+    const rows = [
+      ["day", "heutiger Kalendertag"],
+      ["quinzaine", "Halbmonat"],
+      ["month", "laufender Monat"],
+      ["alltime", "Allzeit"],
+    ].filter(([lvl]) => recs[lvl])
+      .map(([lvl, label]) => {
+        const r = recs[lvl];
+        let mark = "";
+        if (status.level === lvl) mark = `<span style="color:${c[lvl]}">●</span> `;
+        else if (status.near === lvl) mark = `<span style="color:${c[lvl]}">○</span> `;
+        return `<tr><td>${mark}${label}</td><td class="val">${MODES[mode].fmt(r.value)}</td><td class="date">${fmtDate(r.date)}</td></tr>`;
+      })
+      .join("");
+    return rows ? `<table><tr><th>${title}</th><th></th><th></th></tr>${rows}</table>` : "";
+  }
+  // Druck: ein Messwert, aber zwei Rekordrichtungen — beide Tabellen zeigen
+  const tables = mode === "press"
+    ? recordTable("Hochdruckrekorde", st.params.phigh.records, st.params.phigh.status)
+      + recordTable("Tiefdruckrekorde", st.params.plow.records, st.params.plow.status)
+    : recordTable(MODES[mode].noun, stRecords(st), stStatus(st));
+
   const todayVals = mode === "heat" || mode === "cold"
     ? `<span class="hot">▲ ${fmtTemp(st.tmax_today)}</span>
        <span class="cold">▼ ${fmtTemp(st.tmin_today)}</span>`
@@ -544,10 +558,7 @@ function showPanel(st) {
     ${badgeHtml(info)}
     <div class="today-vals">${todayVals}</div>
     <div class="meta">${MODES[mode].todayLabel}${st.last_measurement ? ", letzte Messung " + st.last_measurement.slice(11, 16) + " Uhr" : ""}</div>
-    <table>
-      <tr><th>${MODES[mode].noun}</th><th></th><th></th></tr>
-      ${rows}
-    </table>`;
+    ${tables}`;
   document.getElementById("panel").classList.remove("hidden");
 }
 

@@ -56,7 +56,7 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 }
 .timeline.tl-past { border-color: #ffd166; }
 .timeline input[type=range] {
-  -webkit-appearance: none; appearance: none; width: 200px; height: 18px;
+  -webkit-appearance: none; appearance: none; width: 170px; height: 18px;
   background: transparent; border: none; padding: 0; cursor: pointer;
 }
 /* der Browser-Fokusring passt nicht zum Custom-Slider; der aktive
@@ -82,6 +82,10 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 .timeline.tl-past input[type=range]::-moz-range-thumb { background: #ffd166; }
 .tl-caption { color: #9aa4b5; }
 .tl-end { color: #6b7688; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+/* fester Platzhalter für Zeitpunkt + Button, sonst springt die rechtsbündige
+   Box nach links, sobald beim Schieben das Label eingeblendet wird */
+.tl-extra { display: inline-flex; align-items: center; gap: 8px; min-width: 285px; }
+@media (max-width: 900px) { .tl-extra { min-width: 0; } }
 #timeline-label {
   color: #ffd166; font-weight: 600; font-variant-numeric: tabular-nums;
 }
