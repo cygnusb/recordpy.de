@@ -129,6 +129,13 @@ def test_imprint_shown_when_configured(monkeypatch):
     assert '<a href="impressum">' in index
 
 
+def test_germany_geojson_route():
+    resp = _client().get("/germany.geo.json")
+    assert resp.status_code == 200
+    assert resp.headers["cache-control"] == "public, max-age=86400"
+    assert resp.json()["features"]
+
+
 def _st(name, lon, lat, tmax, tmin, heat_level=None, heat_near=None):
     return {
         "id": name, "name": name, "bundesland": "Hessen", "lat": lat, "lon": lon,

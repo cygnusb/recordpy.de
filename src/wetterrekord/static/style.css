@@ -32,6 +32,7 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 .legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
 .legend i.ring { background: transparent; border: 2px solid; width: 8px; height: 8px; }
 .legend .sep { color: #3a4557; }
+.legend .scalebar i { width: 90px; height: 10px; border-radius: 2px; }
 
 .timeline { display: inline-flex; align-items: center; gap: 6px; }
 .timeline input[type=range] { width: 200px; accent-color: #ff8c42; }

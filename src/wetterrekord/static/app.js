@@ -56,36 +56,60 @@ function fmtPress(v) {
 }
 const shortTemp = (v) => v.toFixed(1).replace(".", ",") + "°";
 
+// Farbskalen der Farbfläche: [Wert, r, g, b, a]-Stops, dazwischen linear.
+// Temperatur angelehnt an übliche 2m-Temperatur-Skalen von Modellkarten.
+const TEMP_SCALE = [
+  [-25, 90, 30, 150, 210], [-15, 60, 60, 200, 210], [-5, 60, 130, 230, 210],
+  [0, 70, 185, 220, 210], [5, 80, 200, 160, 210], [10, 90, 200, 90, 210],
+  [15, 170, 215, 70, 210], [20, 235, 225, 70, 210], [25, 245, 180, 50, 210],
+  [30, 245, 130, 35, 210], [35, 230, 65, 35, 210], [40, 180, 20, 40, 210],
+  [45, 140, 0, 85, 210], [50, 220, 0, 160, 210],
+];
+// Böen in m/s (Anzeige km/h): ~29/40/61/90/119/162 km/h, an Warnstufen angelehnt
+const GUST_SCALE = [
+  [0, 100, 160, 120, 40], [8, 120, 200, 80, 120], [11, 235, 220, 60, 160],
+  [17, 245, 150, 40, 190], [25, 225, 50, 40, 210], [33, 150, 30, 160, 230],
+  [45, 90, 0, 120, 240],
+];
+const RAIN_SCALE = [
+  [0, 80, 120, 180, 0], [0.5, 110, 160, 210, 60], [2, 80, 140, 220, 120],
+  [10, 40, 90, 200, 170], [25, 30, 40, 160, 210], [50, 130, 40, 170, 230],
+];
+const PRESSURE_SCALE = [
+  [985, 60, 80, 200, 180], [1000, 70, 160, 200, 160], [1013, 110, 190, 120, 140],
+  [1025, 235, 190, 70, 160], [1040, 230, 90, 40, 190],
+];
+
 const MODES = {
   heat: {
     icon: "🔥", noun: "Hitzerekorde", todayLabel: "Max/Min des Tages", nearText: "≤1 °C",
     colors: HEAT_COLORS, value: (st) => st.tmax_today, records: (st) => st.records.high,
-    status: (st) => st.heat, fmt: fmtTemp, short: shortTemp,
+    status: (st) => st.heat, fmt: fmtTemp, short: shortTemp, scale: TEMP_SCALE,
   },
   cold: {
     icon: "❄️", noun: "Kälterekorde", todayLabel: "Max/Min des Tages", nearText: "≤1 °C",
     colors: COLD_COLORS, value: (st) => st.tmin_today, records: (st) => st.records.low,
-    status: (st) => st.cold, fmt: fmtTemp, short: shortTemp,
+    status: (st) => st.cold, fmt: fmtTemp, short: shortTemp, scale: TEMP_SCALE,
   },
   gust: {
     icon: "💨", noun: "Sturmrekorde (Böen)", todayLabel: "stärkste Böe heute", nearText: "≤7 km/h",
     colors: GUST_COLORS, value: (st) => st.params.gust.value, records: (st) => st.params.gust.records,
-    status: (st) => st.params.gust.status, fmt: fmtGust, short: fmtGust,
+    status: (st) => st.params.gust.status, fmt: fmtGust, short: fmtGust, scale: GUST_SCALE,
   },
   precip: {
     icon: "🌧️", noun: "Regenrekorde (Tagessumme)", todayLabel: "Niederschlag heute (läuft auf)", nearText: "≤5 mm",
     colors: RAIN_COLORS, value: (st) => st.params.precip.value, records: (st) => st.params.precip.records,
-    status: (st) => st.params.precip.status, fmt: fmtRain, short: fmtRain,
+    status: (st) => st.params.precip.status, fmt: fmtRain, short: fmtRain, scale: RAIN_SCALE,
   },
   phigh: {
     icon: "⬆️", noun: "Hochdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel (bisher)", nearText: "≤2 hPa",
     colors: PHIGH_COLORS, value: (st) => st.params.phigh.value, records: (st) => st.params.phigh.records,
-    status: (st) => st.params.phigh.status, fmt: fmtPress, short: fmtPress,
+    status: (st) => st.params.phigh.status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
   },
   plow: {
     icon: "⬇️", noun: "Tiefdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel (bisher)", nearText: "≤2 hPa",
     colors: PLOW_COLORS, value: (st) => st.params.plow.value, records: (st) => st.params.plow.records,
-    status: (st) => st.params.plow.status, fmt: fmtPress, short: fmtPress,
+    status: (st) => st.params.plow.status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
   },
 };
 
@@ -105,6 +129,135 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
   maxZoom: 12,
 }).addTo(map);
+
+// ---- Farbfläche: IDW-interpoliertes Messwertfeld über Deutschland ----
+// zwischen Kachel-Ebene (200) und Marker-Overlay (400)
+map.createPane("interp").style.zIndex = 350;
+map.getPane("interp").style.pointerEvents = "none";
+
+let overlayEnabled = localStorage.getItem("wetterrekordOverlay") !== "0";
+let overlayLayer = null;
+let overlayKey = null; // memo: nur neu rechnen, wenn sich etwas geändert hat
+let dataStamp = 0; // wird bei jedem load() hochgezählt
+let germanyRings = null; // Polygon-Ringe [[lon, lat], ...]
+
+fetch("germany.geo.json")
+  .then((r) => r.json())
+  .then((geo) => {
+    germanyRings = [];
+    for (const f of geo.features) {
+      const polys = f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [f.geometry.coordinates];
+      for (const p of polys) germanyRings.push(p[0]);
+    }
+    renderOverlay();
+  });
+
+function scaleColor(stops, v) {
+  // liefert [r, g, b, a]; außerhalb der Stops wird geklemmt
+  if (v <= stops[0][0]) return stops[0].slice(1);
+  const last = stops[stops.length - 1];
+  if (v >= last[0]) return last.slice(1);
+  for (let i = 1; i < stops.length; i++) {
+    if (v <= stops[i][0]) {
+      const [v0, ...c0] = stops[i - 1];
+      const [v1, ...c1] = stops[i];
+      const t = (v - v0) / (v1 - v0);
+      return [0, 1, 2, 3].map((k) => c0[k] + t * (c1[k] - c0[k]));
+    }
+  }
+  return last.slice(1);
+}
+
+// IDW (Potenz 2) über die k nächsten Stationen; Koordinaten äquirektangular
+// (lon mit cos(lat) gestaucht), auf der Skala Deutschlands genau genug
+const IDW_K = 12;
+const LON_SCALE = Math.cos((51 * Math.PI) / 180);
+
+function idw(pts, x, y) {
+  const nearest = []; // [d2, v], aufsteigend, max. IDW_K Einträge
+  for (const p of pts) {
+    const dx = (p.x - x) * LON_SCALE;
+    const dy = p.y - y;
+    const d2 = dx * dx + dy * dy;
+    if (nearest.length === IDW_K && d2 >= nearest[IDW_K - 1][0]) continue;
+    let i = nearest.length;
+    while (i > 0 && nearest[i - 1][0] > d2) i--;
+    nearest.splice(i, 0, [d2, p.v]);
+    if (nearest.length > IDW_K) nearest.pop();
+  }
+  let wsum = 0, vsum = 0;
+  for (const [d2, v] of nearest) {
+    if (d2 < 1e-10) return v;
+    const w = 1 / d2;
+    wsum += w;
+    vsum += w * v;
+  }
+  return vsum / wsum;
+}
+
+function renderOverlay() {
+  const show = overlayEnabled && view === "map" && germanyRings;
+  const pts = show
+    ? stations.map((st) => ({ x: st.lon, y: st.lat, v: stToday(st) })).filter((p) => p.v !== null && p.v !== undefined)
+    : [];
+  if (pts.length < 3) {
+    if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
+    overlayKey = null;
+    return;
+  }
+  const key = `${mode}|${dataStamp}|${map.getBounds().toBBoxString()}`;
+  if (key === overlayKey) return;
+  overlayKey = key;
+
+  const size = map.getSize();
+  const STEP = 4; // grobes Raster, das Hochskalieren glättet
+  const gw = Math.ceil(size.x / STEP);
+  const gh = Math.ceil(size.y / STEP);
+  const grid = document.createElement("canvas");
+  grid.width = gw;
+  grid.height = gh;
+  const gctx = grid.getContext("2d");
+  const img = gctx.createImageData(gw, gh);
+  const scale = MODES[mode].scale;
+  for (let j = 0; j < gh; j++) {
+    for (let i = 0; i < gw; i++) {
+      const ll = map.containerPointToLatLng([(i + 0.5) * STEP, (j + 0.5) * STEP]);
+      const c = scaleColor(scale, idw(pts, ll.lng, ll.lat));
+      const o = (j * gw + i) * 4;
+      img.data[o] = c[0];
+      img.data[o + 1] = c[1];
+      img.data[o + 2] = c[2];
+      img.data[o + 3] = c[3];
+    }
+  }
+  gctx.putImageData(img, 0, 0);
+
+  // aufs Deutschland-Polygon zuschneiden
+  const canvas = document.createElement("canvas");
+  canvas.width = size.x;
+  canvas.height = size.y;
+  const ctx = canvas.getContext("2d");
+  ctx.beginPath();
+  for (const ring of germanyRings) {
+    ring.forEach(([lon, lat], i) => {
+      const pt = map.latLngToContainerPoint([lat, lon]);
+      if (i === 0) ctx.moveTo(pt.x, pt.y);
+      else ctx.lineTo(pt.x, pt.y);
+    });
+    ctx.closePath();
+  }
+  ctx.clip();
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(grid, 0, 0, size.x, size.y);
+
+  const layer = L.imageOverlay(canvas.toDataURL(), map.getBounds(), {
+    pane: "interp", opacity: 0.55, interactive: false,
+  }).addTo(map);
+  if (overlayLayer) map.removeLayer(overlayLayer);
+  overlayLayer = layer;
+}
+
+map.on("moveend zoomend", renderOverlay);
 
 function levelColors() {
   return MODES[mode].colors;
@@ -354,12 +507,25 @@ function renderLegend() {
   const levels = ["alltime", "month", "quinzaine", "day"]
     .map((k) => `<span><i style="background:${c[k]}"></i>${LEVEL_LABEL_LONG[k]}</span>`)
     .join("");
+  let scalebar = "";
+  if (overlayEnabled && view === "map") {
+    const stops = MODES[mode].scale;
+    const lo = stops[0][0];
+    const hi = stops[stops.length - 1][0];
+    const grad = stops
+      .map(([v, r, g, b, a]) => `rgba(${r},${g},${b},${a / 255}) ${(((v - lo) / (hi - lo)) * 100).toFixed(1)}%`)
+      .join(", ");
+    scalebar =
+      `<span class="sep">|</span><span class="scalebar">${MODES[mode].short(lo)}` +
+      `<i style="background:linear-gradient(90deg, ${grad})"></i>${MODES[mode].short(hi)}</span>`;
+  }
   document.getElementById("legend").innerHTML =
     `${levels}<span class="sep">|</span>` +
     `<span><i style="background:${c.day}"></i>gefüllt = gebrochen</span>` +
     `<span><i class="ring" style="border-color:${c.day}"></i>Ring = nah dran (${MODES[mode].nearText})</span>` +
     `<span><i style="background:${NONE_COLOR}"></i>kein Rekord</span>` +
-    `<span><i style="background:${NODATA_COLOR}"></i>keine Daten</span>`;
+    `<span><i style="background:${NODATA_COLOR}"></i>keine Daten</span>` +
+    scalebar;
 }
 
 function render() {
@@ -370,6 +536,7 @@ function render() {
   renderLegend();
   if (view === "map") renderMap();
   else renderTable();
+  renderOverlay();
 }
 
 // ---- Zeitleiste ----
@@ -421,6 +588,7 @@ async function load() {
   if (!resp.ok) return;
   const data = await resp.json();
   stations = data.stations;
+  dataStamp++;
   document.getElementById("generated-at").textContent = data.generated_at.slice(0, 16).replace("T", " ");
   updateTimelineRange(data.history_start);
 
@@ -473,6 +641,14 @@ document.getElementById("filter-records").addEventListener("change", (ev) => {
   render();
 });
 document.getElementById("filter-alt").addEventListener("input", render);
+const overlayToggle = document.getElementById("overlay-toggle");
+overlayToggle.checked = overlayEnabled;
+overlayToggle.addEventListener("change", () => {
+  overlayEnabled = overlayToggle.checked;
+  localStorage.setItem("wetterrekordOverlay", overlayEnabled ? "1" : "0");
+  renderLegend();
+  renderOverlay();
+});
 document.getElementById("panel-close").addEventListener("click", () => {
   selectedStationId = null;
   document.getElementById("panel").classList.add("hidden");

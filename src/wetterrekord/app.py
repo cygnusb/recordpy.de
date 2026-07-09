@@ -299,6 +299,17 @@ def api_station_detail(station_id: str):
     }
 
 
+# Germany outline for the frontend's interpolation overlay (clip path).
+# Shares the asset used by the OG image renderer.
+@app.get("/germany.geo.json")
+def germany_geojson():
+    return Response(
+        content=(ogimage.ASSETS / "germany.geo.json").read_bytes(),
+        media_type="application/geo+json",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
 # The OG image is rendered from the live records so shared links show the
 # current day. Cached for the live-poll interval; the route shadows the
 # StaticFiles mount, so no static og-image.png must exist.
