@@ -26,11 +26,19 @@ except importlib.metadata.PackageNotFoundError:
     VERSION = "dev"
 
 conn: sqlite3.Connection | None = None
+# True while the (re-)ingest of the DWD history runs; the frontend blocks
+# with a notice because records are inconsistent during the rebuild.
+ingest_running = False
 
 
 def refresh_records() -> None:
     """Recompute the records from the DWD history, then poll immediately."""
-    ingest.ingest()
+    global ingest_running
+    ingest_running = True
+    try:
+        ingest.ingest()
+    finally:
+        ingest_running = False
     live.poll_all(conn)
 
 
@@ -263,6 +271,7 @@ def api_stations(at: str | None = None):
         "generated_at": generated_at.isoformat(),
         # oldest stored measurement — the frontend limits the timeline to this
         "history_start": conn.execute("SELECT MIN(ts) FROM measurements").fetchone()[0],
+        "ingest_running": ingest_running,
         "stations": stations,
     }
 

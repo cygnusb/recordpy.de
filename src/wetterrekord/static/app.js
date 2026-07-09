@@ -647,6 +647,13 @@ async function load() {
   const resp = await fetch(url);
   if (!resp.ok) return;
   const data = await resp.json();
+  // während des Rekord-Neuaufbaus sind die Daten inkonsistent: Hinweis
+  // einblenden und regelmäßig nachfragen, bis der Import fertig ist
+  document.getElementById("ingest-overlay").classList.toggle("hidden", !data.ingest_running);
+  if (data.ingest_running) {
+    setTimeout(load, 30 * 1000);
+    return;
+  }
   stations = data.stations;
   dataStamp++;
   document.getElementById("generated-at").textContent = data.generated_at.slice(0, 16).replace("T", " ");
