@@ -49,18 +49,28 @@ def _update(current: Record | None, value: float, day: date, kind: str) -> Recor
     return Record(value, day) if better else current
 
 
+# Plausibility window for reduced sea-level pressure: the German extremes are
+# roughly 954/1058 hPa; the DWD history contains obvious errors far outside
+# (e.g. Putbus with a 650 hPa "daily mean" at 40 m altitude).
+PM_PLAUSIBLE = (930.0, 1085.0)
+
+
 def _reduce_pm(v: DailyValue, altitude: float) -> DailyValue:
     """Replace station-level PM with its sea-level reduction.
 
     Uses the daily mean temperature approximated from tmax/tmin; without a
-    temperature the reduction is unreliable, so the value is dropped.
+    temperature the reduction is unreliable, so the value is dropped —
+    as are physically implausible values (data errors in the DWD series).
     """
     if v.pm is None:
         return v
     temps = [t for t in (v.tmax, v.tmin) if t is not None]
     if not temps:
         return replace(v, pm=None)
-    return replace(v, pm=round(reduce_pressure(v.pm, altitude, sum(temps) / len(temps)), 1))
+    reduced = round(reduce_pressure(v.pm, altitude, sum(temps) / len(temps)), 1)
+    if not PM_PLAUSIBLE[0] <= reduced <= PM_PLAUSIBLE[1]:
+        return replace(v, pm=None)
+    return replace(v, pm=reduced)
 
 
 def compute_records(values: list[DailyValue], altitude: float = 0.0) -> StationRecords:

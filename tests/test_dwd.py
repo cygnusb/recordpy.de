@@ -119,6 +119,20 @@ def test_compute_records_pressure_reduced(monkeypatch):
     assert r.alltime[("pressure", "low")].value == round(reduce_pressure(984.0, 276, 28.0), 1)
 
 
+def test_compute_records_pressure_plausibility(monkeypatch):
+    from wetterrekord import config
+
+    monkeypatch.setattr(config, "MIN_YEARS", 2)
+    values = [
+        DailyValue(date(2000, 7, 7), tmax=20.0, tmin=10.0, pm=1010.0),
+        DailyValue(date(2001, 7, 7), tmax=20.0, tmin=10.0, pm=1005.0),
+        # DWD data error (Putbus-style): a 650 hPa "daily mean" at 40 m
+        DailyValue(date(2002, 7, 7), tmax=20.0, tmin=10.0, pm=649.8),
+    ]
+    r = compute_records(values, altitude=40)
+    assert r.alltime[("pressure", "low")].record_date == date(2001, 7, 7)
+
+
 def test_compute_records_min_years_per_param():
     # 31 years of temperature, but only one year of wind: no gust records
     values = [DailyValue(date(1990 + i, 7, 7), tmax=30.0) for i in range(31)]

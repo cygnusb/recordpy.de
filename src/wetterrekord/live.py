@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from . import config
 from .dwd import DwdClient, reduce_pressure
+from .records import PM_PLAUSIBLE
 
 log = logging.getLogger(__name__)
 
@@ -44,10 +45,14 @@ def poll_station(client: DwdClient, station_id: str, altitude: float = 0.0) -> t
         return None
 
     # PP_10 is station-level pressure; reduce it to sea level with the
-    # simultaneous TT_10 (same file, same timestamp)
+    # simultaneous TT_10 (same file, same timestamp). Implausible results
+    # (sensor glitches) are dropped like in the historical ingest.
     for row in merged.values():
         if row[3] is not None:
-            row[3] = round(reduce_pressure(row[3], altitude, row[0]), 1) if row[0] is not None else None
+            reduced = (
+                round(reduce_pressure(row[3], altitude, row[0]), 1) if row[0] is not None else None
+            )
+            row[3] = reduced if reduced is not None and PM_PLAUSIBLE[0] <= reduced <= PM_PLAUSIBLE[1] else None
 
     def series(slot):
         return [row[slot] for row in merged.values() if row[slot] is not None]
