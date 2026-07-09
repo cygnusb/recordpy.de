@@ -102,12 +102,12 @@ const MODES = {
     status: (st) => st.params.precip.status, fmt: fmtRain, short: fmtRain, scale: RAIN_SCALE,
   },
   phigh: {
-    icon: "⬆️", noun: "Hochdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel (bisher)", nearText: "≤2 hPa",
+    icon: "⬆️", noun: "Hochdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel auf Meereshöhe (bisher)", nearText: "≤2 hPa",
     colors: PHIGH_COLORS, value: (st) => st.params.phigh.value, records: (st) => st.params.phigh.records,
     status: (st) => st.params.phigh.status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
   },
   plow: {
-    icon: "⬇️", noun: "Tiefdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel (bisher)", nearText: "≤2 hPa",
+    icon: "⬇️", noun: "Tiefdruckrekorde (Tagesmittel)", todayLabel: "Luftdruck-Tagesmittel auf Meereshöhe (bisher)", nearText: "≤2 hPa",
     colors: PLOW_COLORS, value: (st) => st.params.plow.value, records: (st) => st.params.plow.records,
     status: (st) => st.params.plow.status, fmt: fmtPress, short: fmtPress, scale: PRESSURE_SCALE,
   },
@@ -204,6 +204,7 @@ function overlayPoints() {
 function renderOverlay() {
   const show = overlayEnabled && view === "map" && germanyRings;
   const pts = show ? overlayPoints() : [];
+  document.getElementById("map").classList.toggle("overlay-crosshair", pts.length >= 3);
   if (pts.length < 3) {
     if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
     overlayKey = null;
@@ -362,11 +363,6 @@ function passesFilter(st) {
   if (land && st.bundesland !== land) return false;
   const maxAlt = document.getElementById("filter-alt").value;
   if (maxAlt !== "" && st.altitude > Number(maxAlt)) return false;
-  const minAge = document.getElementById("filter-age").value;
-  if (minAge !== "") {
-    const age = recordAge(st);
-    if (age === null || age < Number(minAge)) return false;
-  }
   return true;
 }
 function filtered() {
@@ -686,9 +682,7 @@ document.getElementById("view-map").addEventListener("click", () => {
 document.getElementById("view-table").addEventListener("click", () => {
   view = "table"; setToggle(["view-map", "view-table"], "view-table"); render();
 });
-for (const id of ["filter-land", "filter-age"]) {
-  document.getElementById(id).addEventListener("change", render);
-}
+document.getElementById("filter-land").addEventListener("change", render);
 document.getElementById("filter-records").addEventListener("change", (ev) => {
   recordsOnly[view] = ev.target.checked;
   render();

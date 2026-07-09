@@ -50,18 +50,14 @@
       <button id="view-map" class="active">Karte</button>
       <button id="view-table">Tabelle</button>
     </div>
+  </div>
+  <div class="controls">
     <select id="filter-land"><option value="">Alle Bundesländer</option></select>
     <label>Höhe ≤ <input type="number" id="filter-alt" placeholder="∞" min="0" step="100"> m</label>
-    <select id="filter-age">
-      <option value="">Rekordalter: egal</option>
-      <option value="10">Tagesrekord ≥ 10 Jahre</option>
-      <option value="30">Tagesrekord ≥ 30 Jahre</option>
-      <option value="50">Tagesrekord ≥ 50 Jahre</option>
-    </select>
-    <label id="filter-records-label"><input type="checkbox" id="filter-records"> nur Rekorde</label>
-    <label id="overlay-label" title="interpolierte Messwert-Farbfläche über Deutschland"><input type="checkbox" id="overlay-toggle"> Farbfläche</label>
+    <label class="switch" id="filter-records-label"><input type="checkbox" id="filter-records"><span class="knob"></span> nur Rekorde</label>
+    <label class="switch" id="overlay-label" title="interpolierte Messwert-Farbfläche über Deutschland"><input type="checkbox" id="overlay-toggle"><span class="knob"></span> Farbfläche</label>
     <span class="timeline" title="Zeitpunkt der Anzeige wählen (bis zu 30 Tage zurück, soweit Daten vorliegen)">
-      <span class="tl-caption">🕐 Rückblick:</span>
+      <span class="tl-caption">🕐 Rückblick</span>
       <span class="tl-end" id="timeline-min-label">−48&thinsp;h</span>
       <input type="range" id="timeline" min="-96" max="0" value="0" step="1" autocomplete="off" list="timeline-ticks">
       <datalist id="timeline-ticks">
@@ -93,8 +89,8 @@
   <p>Neben der Temperatur gibt es auch <strong>Sturmrekorde</strong> (stärkste
   Windböe des Tages), <strong>Regenrekorde</strong> (höchste Tagessumme des
   Niederschlags, läuft über den Tag auf) und <strong>Luftdruckrekorde</strong>
-  (höchster/tiefster Tagesmittelwert — beim Luftdruck ist der Vergleich erst
-  gegen Tagesende belastbar).</p>
+  (höchster/tiefster Tagesmittelwert, auf Meereshöhe reduziert — beim Luftdruck
+  ist der Vergleich erst gegen Tagesende belastbar).</p>
   <p>Berücksichtigt werden nur Stationen mit mindestens 30 Jahren Messhistorie
   im jeweiligen Messwert — nicht jede Station misst Wind, Niederschlag und Luftdruck. Die
   Live-Werte stammen aus den 10-Minuten-Daten des DWD (etwa 30 Minuten Verzögerung) und

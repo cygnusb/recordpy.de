@@ -1,11 +1,11 @@
 """Computation of records (temperature, gusts, precipitation, pressure)
 from a daily-value series."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 
 from . import config
-from .dwd import DailyValue
+from .dwd import DailyValue, reduce_pressure
 
 
 @dataclass
@@ -49,7 +49,23 @@ def _update(current: Record | None, value: float, day: date, kind: str) -> Recor
     return Record(value, day) if better else current
 
 
-def compute_records(values: list[DailyValue]) -> StationRecords:
+def _reduce_pm(v: DailyValue, altitude: float) -> DailyValue:
+    """Replace station-level PM with its sea-level reduction.
+
+    Uses the daily mean temperature approximated from tmax/tmin; without a
+    temperature the reduction is unreliable, so the value is dropped.
+    """
+    if v.pm is None:
+        return v
+    temps = [t for t in (v.tmax, v.tmin) if t is not None]
+    if not temps:
+        return replace(v, pm=None)
+    return replace(v, pm=round(reduce_pressure(v.pm, altitude, sum(temps) / len(temps)), 1))
+
+
+def compute_records(values: list[DailyValue], altitude: float = 0.0) -> StationRecords:
+    if altitude:
+        values = [_reduce_pm(v, altitude) for v in values]
     r = StationRecords()
     for param, kinds in PARAM_KINDS.items():
         years = [

@@ -45,7 +45,9 @@ async def lifespan(app: FastAPI):
     # then considered misfired and gets discarded.
     now = datetime.now(ZoneInfo(config.LOCAL_TZ))
     # Also re-ingest when a schema upgrade added still-empty records
-    # (v0.2: quinzaine table, v0.7: non-temperature parameters).
+    # (v0.2: quinzaine table, v0.7: non-temperature parameters) or when the
+    # pressure records are still station-level (v0.10: sea-level reduction;
+    # mountain stations then have all-time values far below 900 hPa).
     db_empty = (
         conn.execute("SELECT count(*) FROM stations").fetchone()[0] == 0
         or conn.execute("SELECT count(*) FROM quinzaine_records").fetchone()[0] == 0
@@ -53,6 +55,10 @@ async def lifespan(app: FastAPI):
             "SELECT count(*) FROM quinzaine_records WHERE param != 'temp'"
         ).fetchone()[0]
         == 0
+        or conn.execute(
+            "SELECT count(*) FROM alltime_records WHERE param = 'pressure' AND value < 900"
+        ).fetchone()[0]
+        > 0
     )
     if db_empty:
         # First start (e.g. fresh container): load the history in the

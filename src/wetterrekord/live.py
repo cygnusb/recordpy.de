@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from . import config
-from .dwd import DwdClient
+from .dwd import DwdClient, reduce_pressure
 
 log = logging.getLogger(__name__)
 
@@ -18,11 +18,11 @@ TZ = ZoneInfo(config.LOCAL_TZ)
 MEASUREMENT_RETENTION_HOURS = 31 * 24
 
 
-def poll_station(client: DwdClient, station_id: str) -> tuple | None:
+def poll_station(client: DwdClient, station_id: str, altitude: float = 0.0) -> tuple | None:
     """Today's merged readings and aggregates of one station — or None.
 
     Returns (date, tmax, tmin, gust_max, rain_sum, pp_mean, last_ts, rows)
-    where rows is [(ts, tt, fx, rr, pp)].
+    where rows is [(ts, tt, fx, rr, pp)]; pp is reduced to sea level.
     """
     today = datetime.now(TZ).date()
     merged: dict[datetime, list] = {}  # local ts -> [tt, fx, rr, pp]
@@ -43,6 +43,12 @@ def poll_station(client: DwdClient, station_id: str) -> tuple | None:
     if not merged:
         return None
 
+    # PP_10 is station-level pressure; reduce it to sea level with the
+    # simultaneous TT_10 (same file, same timestamp)
+    for row in merged.values():
+        if row[3] is not None:
+            row[3] = round(reduce_pressure(row[3], altitude, row[0]), 1) if row[0] is not None else None
+
     def series(slot):
         return [row[slot] for row in merged.values() if row[slot] is not None]
 
@@ -62,12 +68,16 @@ def poll_station(client: DwdClient, station_id: str) -> tuple | None:
 def poll_all(conn: sqlite3.Connection, client: DwdClient | None = None) -> None:
     own_client = client is None
     client = client or DwdClient()
-    station_ids = [row["id"] for row in conn.execute("SELECT id FROM stations")]
+    station_ids = {
+        row["id"]: row["altitude"] for row in conn.execute("SELECT id, altitude FROM stations")
+    }
     log.info("Live poll for %d stations", len(station_ids))
 
     results = []
     with ThreadPoolExecutor(max_workers=8) as pool:
-        futures = {pool.submit(poll_station, client, sid): sid for sid in station_ids}
+        futures = {
+            pool.submit(poll_station, client, sid, alt): sid for sid, alt in station_ids.items()
+        }
         for future in as_completed(futures):
             sid = futures[future]
             try:

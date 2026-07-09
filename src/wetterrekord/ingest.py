@@ -80,7 +80,7 @@ def ingest(limit: int | None = None) -> None:
     log.info("%d stations selected", len(stations))
 
     def process(station: StationInfo) -> tuple[StationInfo, StationRecords]:
-        return station, compute_records(client.daily_values(station.id))
+        return station, compute_records(client.daily_values(station.id), station.altitude)
 
     done = failed = 0
     with ThreadPoolExecutor(max_workers=config.DOWNLOAD_CONCURRENCY) as pool:

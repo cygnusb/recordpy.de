@@ -115,6 +115,39 @@ def _migrate(conn: sqlite3.Connection) -> None:
         for table in legacy:
             conn.execute(f"INSERT INTO {table} {_V1_COPY[table].format(table + '_v1')}")
             conn.execute(f"DROP TABLE {table}_v1")
+    _migrate_pressure_to_sea_level(conn)
+
+
+def _migrate_pressure_to_sea_level(conn: sqlite3.Connection) -> None:
+    """v3 (0.10.0): stored pp values were station-level; reduce to sea level.
+
+    Each measurement row carries the simultaneous temperature, so the stored
+    values can be reduced in place; rows without a temperature lose their pp.
+    live_state.pp_today is recomputed from the migrated rows.
+    """
+    if conn.execute("PRAGMA user_version").fetchone()[0] >= 3:
+        return
+    from .dwd import reduce_pressure  # local import: db must not depend on dwd at import time
+
+    altitudes = {r["id"]: r["altitude"] for r in conn.execute("SELECT id, altitude FROM stations")}
+    updates = []
+    for row in conn.execute(
+        "SELECT rowid, station_id, tt, pp FROM measurements WHERE pp IS NOT NULL"
+    ):
+        alt = altitudes.get(row["station_id"])
+        reduced = (
+            round(reduce_pressure(row["pp"], alt, row["tt"]), 1)
+            if alt is not None and row["tt"] is not None
+            else None
+        )
+        updates.append((reduced, row["rowid"]))
+    with conn:
+        conn.executemany("UPDATE measurements SET pp = ? WHERE rowid = ?", updates)
+        conn.execute(
+            "UPDATE live_state SET pp_today = (SELECT ROUND(AVG(pp), 1) FROM measurements"
+            " WHERE station_id = live_state.station_id AND ts >= live_state.date)"
+        )
+        conn.execute("PRAGMA user_version = 3")
 
 
 def connect(path: Path | None = None) -> sqlite3.Connection:

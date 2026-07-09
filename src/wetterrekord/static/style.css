@@ -12,7 +12,7 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 .stats i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: -1px; }
 .stats b { color: #fff; }
 
-.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.85rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 0.85rem; margin-top: 6px; }
 .mode-toggle button {
   background: #232a38; color: #e8e8e8; border: 1px solid #2a3140;
   padding: 4px 12px; cursor: pointer; font-size: 0.85rem;
@@ -34,11 +34,51 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 .legend .sep { color: #3a4557; }
 .legend .scalebar i { width: 90px; height: 10px; border-radius: 2px; }
 
-.timeline { display: inline-flex; align-items: center; gap: 6px; }
-.timeline input[type=range] { width: 200px; accent-color: #ff8c42; }
-.timeline.tl-past input[type=range] { accent-color: #ffd166; }
+/* an/aus als Kippschalter statt nackter Checkbox */
+.switch { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch .knob {
+  width: 32px; height: 18px; border-radius: 9px; background: #2a3140;
+  border: 1px solid #3a4557; position: relative; flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s;
+}
+.switch .knob::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: #9aa4b5; transition: transform 0.18s, background 0.18s;
+}
+.switch input:checked + .knob { background: #b35b1e; border-color: #ff8c42; }
+.switch input:checked + .knob::after { transform: translateX(14px); background: #fff; }
+.switch:hover .knob { border-color: #4a5870; }
+
+.timeline {
+  display: inline-flex; align-items: center; gap: 8px; margin-left: auto;
+  background: #1a202b; border: 1px solid #2a3140; border-radius: 8px; padding: 3px 10px;
+}
+.timeline.tl-past { border-color: #ffd166; }
+.timeline input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 200px; height: 18px;
+  background: transparent; border: none; padding: 0; cursor: pointer;
+}
+.timeline input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px; background: #3a4557;
+}
+.timeline input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px;
+  border-radius: 50%; background: #ff8c42; border: 2px solid #14181f;
+  transition: transform 0.12s;
+}
+.timeline input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+.timeline input[type=range]::-moz-range-track {
+  height: 4px; border-radius: 2px; background: #3a4557;
+}
+.timeline input[type=range]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #ff8c42; border: 2px solid #14181f;
+}
+.timeline.tl-past input[type=range]::-webkit-slider-thumb { background: #ffd166; }
+.timeline.tl-past input[type=range]::-moz-range-thumb { background: #ffd166; }
 .tl-caption { color: #9aa4b5; }
-.tl-end { color: #6b7688; font-size: 0.75rem; }
+.tl-end { color: #6b7688; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 #timeline-label {
   color: #ffd166; font-weight: 600; font-variant-numeric: tabular-nums;
 }
@@ -47,7 +87,6 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
   border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem;
 }
 #timeline-now.hidden, #timeline-label.hidden, #filter-records-label.hidden { display: none; }
-#filter-records-label input { accent-color: #ff8c42; }
 
 .badge-near { background: transparent; border: 1.5px solid; }
 
@@ -116,4 +155,6 @@ footer a { color: #9aa4b5; }
 }
 .temp-label::before { display: none; }
 .interp-tip { text-align: center; }
+/* über der Farbfläche zeigt der Cursor an, dass Werte abgefragt werden können */
+.leaflet-container.overlay-crosshair { cursor: crosshair; }
 .interp-note { font-weight: 400; font-style: italic; color: #9aa4b5; font-size: 0.65rem; }

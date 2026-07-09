@@ -36,6 +36,16 @@ class DailyValue:
     pm: float | None = None  # PM, daily mean pressure at station altitude (hPa)
 
 
+def reduce_pressure(p: float, altitude: float, temp_c: float) -> float:
+    """Station pressure -> mean sea level (international barometric formula).
+
+    DWD publishes PM/PP_10 at station altitude; weather reports use pressure
+    reduced to sea level, so values must be reduced to be comparable across
+    stations (and to user expectations).
+    """
+    return p * (1 - 0.0065 * altitude / (temp_c + 0.0065 * altitude + 273.15)) ** -5.255
+
+
 _STATION_RE = re.compile(
     r"^(?P<id>\d{5}) (?P<von>\d{8}) (?P<bis>\d{8})\s+(?P<alt>-?\d+)\s+"
     r"(?P<lat>-?\d+\.\d+)\s+(?P<lon>-?\d+\.\d+)\s+(?P<rest>\S.*)$"

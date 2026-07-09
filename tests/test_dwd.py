@@ -93,6 +93,32 @@ def test_compute_records_extra_params(monkeypatch):
     assert ("gust", "low") not in r.alltime  # gusts only have high records
 
 
+def test_reduce_pressure():
+    from wetterrekord.dwd import reduce_pressure
+
+    assert reduce_pressure(1013.0, 0, 15.0) == 1013.0  # sea level: unchanged
+    # Öhringen case: 985 hPa at 276 m and ~25 °C reduces to roughly 1016 hPa
+    assert 1013 < reduce_pressure(985.0, 276, 25.0) < 1020
+    # Zugspitze: 715 hPa at 2956 m must land in a plausible sea-level range
+    assert 990 < reduce_pressure(715.0, 2956, 0.0) < 1050
+
+
+def test_compute_records_pressure_reduced(monkeypatch):
+    from wetterrekord import config
+    from wetterrekord.dwd import reduce_pressure
+
+    monkeypatch.setattr(config, "MIN_YEARS", 2)
+    values = [
+        DailyValue(date(2000, 7, 7), tmax=30.0, tmin=20.0, pm=985.0),
+        DailyValue(date(2001, 7, 7), tmax=28.0, tmin=None, pm=984.0),
+        DailyValue(date(2002, 7, 7), tmax=None, tmin=None, pm=990.0),  # no temp: dropped
+    ]
+    r = compute_records(values, altitude=276)
+    assert r.alltime[("pressure", "high")].value == round(reduce_pressure(985.0, 276, 25.0), 1)
+    # 2001 reduces with tmax alone; 2002 has no temperature and must not count
+    assert r.alltime[("pressure", "low")].value == round(reduce_pressure(984.0, 276, 28.0), 1)
+
+
 def test_compute_records_min_years_per_param():
     # 31 years of temperature, but only one year of wind: no gust records
     values = [DailyValue(date(1990 + i, 7, 7), tmax=30.0) for i in range(31)]

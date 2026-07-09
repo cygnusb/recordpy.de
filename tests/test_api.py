@@ -48,6 +48,35 @@ def test_api_stations_history_start(tmp_path: Path, monkeypatch):
     assert app_mod.api_stations()["history_start"] == "2026-07-01T12:00:00+02:00"
 
 
+def test_pressure_sea_level_migration(tmp_path: Path):
+    from wetterrekord.dwd import reduce_pressure
+
+    conn = db.connect(tmp_path / "test.sqlite")
+    conn.execute(
+        "INSERT INTO stations VALUES ('00001', 'Öhringen', 'BW', 49.2, 9.5, 276, 1950, 2026)"
+    )
+    rows = [
+        ("00001", "2026-07-09T12:00:00+02:00", 25.0, None, None, 985.0),
+        ("00001", "2026-07-09T12:10:00+02:00", None, None, None, 985.0),  # no tt: dropped
+    ]
+    conn.executemany("INSERT INTO measurements VALUES (?,?,?,?,?,?)", rows)
+    conn.execute(
+        "INSERT INTO live_state VALUES ('00001', '2026-07-09', 25.0, 15.0, NULL, NULL,"
+        " 985.0, '2026-07-09T12:10:00+02:00')"
+    )
+    conn.execute("PRAGMA user_version = 0")  # simulate a pre-0.10 database
+    db._migrate_pressure_to_sea_level(conn)
+
+    expected = round(reduce_pressure(985.0, 276, 25.0), 1)
+    got = {r["ts"]: r["pp"] for r in conn.execute("SELECT ts, pp FROM measurements")}
+    assert got["2026-07-09T12:00:00+02:00"] == expected
+    assert got["2026-07-09T12:10:00+02:00"] is None
+    assert conn.execute("SELECT pp_today FROM live_state").fetchone()[0] == expected
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+    # second run is a no-op (guarded by user_version)
+    db._migrate_pressure_to_sea_level(conn)
+
+
 def test_migration_from_v1_schema(tmp_path: Path):
     import sqlite3
 
