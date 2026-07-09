@@ -323,11 +323,14 @@ def index():
     imprint_link = (
         '<a href="impressum">Impressum &amp; Datenschutz</a> · ' if config.IMPRINT_HTML else ""
     )
-    return (
+    html = (
         html.replace("{{BASE_URL}}", config.BASE_URL)
         .replace("{{IMPRINT_LINK}}", imprint_link)
         .replace("{{VERSION}}", VERSION)
     )
+    # no-cache (= revalidate, not "don't store"): the asset URLs carry the
+    # version, so a fresh index is all it takes for deploys to reach browsers
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
 
 
 IMPRINT_PAGE = """<!DOCTYPE html>
