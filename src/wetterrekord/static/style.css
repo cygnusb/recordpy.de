@@ -59,6 +59,9 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
   -webkit-appearance: none; appearance: none; width: 200px; height: 18px;
   background: transparent; border: none; padding: 0; cursor: pointer;
 }
+/* der Browser-Fokusring passt nicht zum Custom-Slider; der aktive
+   Rückblick ist bereits über den gelben Boxrahmen (.tl-past) erkennbar */
+.timeline input[type=range]:focus { outline: none; }
 .timeline input[type=range]::-webkit-slider-runnable-track {
   height: 4px; border-radius: 2px; background: #3a4557;
 }
