@@ -115,3 +115,5 @@ footer a { color: #9aa4b5; }
   box-shadow: none;
 }
 .temp-label::before { display: none; }
+.interp-tip { text-align: center; }
+.interp-note { font-weight: 400; font-style: italic; color: #9aa4b5; font-size: 0.65rem; }

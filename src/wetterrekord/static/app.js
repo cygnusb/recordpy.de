@@ -195,11 +195,15 @@ function idw(pts, x, y) {
   return vsum / wsum;
 }
 
+function overlayPoints() {
+  return stations
+    .map((st) => ({ x: st.lon, y: st.lat, v: stToday(st) }))
+    .filter((p) => p.v !== null && p.v !== undefined);
+}
+
 function renderOverlay() {
   const show = overlayEnabled && view === "map" && germanyRings;
-  const pts = show
-    ? stations.map((st) => ({ x: st.lon, y: st.lat, v: stToday(st) })).filter((p) => p.v !== null && p.v !== undefined)
-    : [];
+  const pts = show ? overlayPoints() : [];
   if (pts.length < 3) {
     if (overlayLayer) { map.removeLayer(overlayLayer); overlayLayer = null; }
     overlayKey = null;
@@ -258,6 +262,45 @@ function renderOverlay() {
 }
 
 map.on("moveend zoomend", renderOverlay);
+map.on("zoomend", () => { if (view === "map") renderMap(); });
+
+// Mouseover irgendwo auf der Fläche: interpolierten Wert unterm Cursor
+// zeigen — deutlich als interpoliert markiert
+function inGermany(lng, lat) {
+  let inside = false;
+  for (const ring of germanyRings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if (yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+const interpTip = L.tooltip({ direction: "top", offset: [0, -10], className: "temp-label interp-tip" });
+function hideInterpTip() {
+  if (map.hasLayer(interpTip)) map.removeLayer(interpTip);
+}
+map.on("mousemove", (ev) => {
+  // über einem Stationsmarker hat dessen eigener Tooltip Vorrang
+  const overMarker = ev.originalEvent.target?.classList?.contains("leaflet-interactive");
+  if (!overlayEnabled || view !== "map" || !germanyRings || overMarker
+      || !inGermany(ev.latlng.lng, ev.latlng.lat)) {
+    hideInterpTip();
+    return;
+  }
+  const pts = overlayPoints();
+  if (pts.length < 3) {
+    hideInterpTip();
+    return;
+  }
+  const v = idw(pts, ev.latlng.lng, ev.latlng.lat);
+  interpTip.setContent(`≈ ${MODES[mode].fmt(v)}<br><span class="interp-note">interpoliert</span>`);
+  interpTip.setLatLng(ev.latlng);
+  if (!map.hasLayer(interpTip)) interpTip.addTo(map);
+});
+map.on("mouseout", hideInterpTip);
 
 function levelColors() {
   return MODES[mode].colors;
@@ -375,8 +418,14 @@ function tempLabel(st) {
   const v = stToday(st);
   return v === null || v === undefined ? "" : MODES[mode].short(v);
 }
+// Markergröße wächst mit dem Zoom: in der Deutschland-Übersicht klein,
+// beim Reinzoomen größer (Faktor 1 bei Zoom 8)
+function zoomFactor() {
+  return Math.min(1.8, Math.max(0.55, 1 + (map.getZoom() - 8) * 0.22));
+}
 function renderMap() {
   const c = levelColors();
+  const zf = zoomFactor();
   for (const st of stations) {
     const m = markers.get(st.id);
     const info = statusInfo(st);
@@ -387,23 +436,27 @@ function renderMap() {
       continue;
     }
     if (!map.hasLayer(m)) m.addTo(map);
-    // im Nur-Rekorde-Modus den Messwert direkt an der Station anzeigen
     m.unbindTooltip();
     if (recordsOnly.map) {
+      // im Nur-Rekorde-Modus den Messwert permanent an der Station anzeigen
       m.bindTooltip(tempLabel(st), {
         permanent: true, direction: "top", offset: [0, -6], className: "temp-label",
       });
+    } else {
+      m.bindTooltip(`<b>${st.name}</b><br>${MODES[mode].fmt(stToday(st))}`, {
+        direction: "top", offset: [0, -6], className: "temp-label",
+      });
     }
     if (info.type === "broken") {
-      m.setStyle({ fillColor: c[info.level], fillOpacity: 0.95, color: "#0b0e13", weight: 1, radius: 7 });
+      m.setStyle({ fillColor: c[info.level], fillOpacity: 0.95, color: "#0b0e13", weight: 1, radius: 7 * zf });
       m.bringToFront();
     } else if (info.type === "near") {
-      m.setStyle({ fillColor: c[info.level], fillOpacity: 0.15, color: c[info.level], weight: 2.5, radius: 7 });
+      m.setStyle({ fillColor: c[info.level], fillOpacity: 0.15, color: c[info.level], weight: 2.5, radius: 7 * zf });
       m.bringToFront();
     } else {
       m.setStyle({
         fillColor: info.type === "nodata" ? NODATA_COLOR : NONE_COLOR,
-        fillOpacity: 0.95, color: "#0b0e13", weight: 1, radius: 4.5,
+        fillOpacity: 0.95, color: "#0b0e13", weight: 1, radius: 4.5 * zf,
       });
     }
   }
