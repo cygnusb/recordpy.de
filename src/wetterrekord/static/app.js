@@ -51,13 +51,17 @@ function fmtPress(v) {
 const shortTemp = (v) => v.toFixed(1).replace(".", ",") + "°";
 
 // Farbskalen der Farbfläche: [Wert, r, g, b, a]-Stops, dazwischen linear.
-// Temperatur angelehnt an übliche 2m-Temperatur-Skalen von Modellkarten.
+// Temperatur nach dem klassischen Modellkarten-Schema (meteologix/GFS-Stil):
+// violett → blau → grün → gelb → orange → rot → dunkelrot, und jenseits von
+// ~40 °C der charakteristische Umschlag über rosa nach weiß und grau.
 const TEMP_SCALE = [
-  [-25, 90, 30, 150, 210], [-15, 60, 60, 200, 210], [-5, 60, 130, 230, 210],
-  [0, 70, 185, 220, 210], [5, 80, 200, 160, 210], [10, 90, 200, 90, 210],
-  [15, 170, 215, 70, 210], [20, 235, 225, 70, 210], [25, 245, 180, 50, 210],
-  [30, 245, 130, 35, 210], [35, 230, 65, 35, 210], [40, 180, 20, 40, 210],
-  [45, 140, 0, 85, 210], [50, 220, 0, 160, 210],
+  [-25, 150, 0, 150, 210], [-18, 90, 0, 160, 210], [-12, 30, 30, 200, 210],
+  [-6, 60, 130, 235, 210], [0, 150, 210, 235, 210], [2, 0, 110, 60, 210],
+  [8, 60, 170, 75, 210], [14, 175, 220, 90, 210], [17, 250, 230, 80, 210],
+  [21, 250, 180, 45, 210], [25, 245, 130, 30, 210], [29, 230, 65, 30, 210],
+  [32, 200, 20, 20, 210], [35, 150, 0, 10, 210], [38, 120, 20, 30, 210],
+  [40, 220, 150, 160, 210], [43, 245, 220, 225, 210], [45, 255, 255, 255, 210],
+  [48, 200, 200, 200, 210], [50, 150, 150, 150, 210],
 ];
 // Böen in m/s (Anzeige km/h): ~29/40/61/90/119/162 km/h, an Warnstufen angelehnt
 const GUST_SCALE = [
