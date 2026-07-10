@@ -199,4 +199,7 @@ footer a { color: #9aa4b5; }
 .interp-tip { text-align: center; }
 /* über der Farbfläche zeigt der Cursor an, dass Werte abgefragt werden können */
 .leaflet-container.overlay-crosshair { cursor: crosshair; }
+/* helle OSM.de-Kacheln (deutsche Labels) per Filter in den Dark Mode drehen;
+   trifft nur die Kachel-Ebene, nicht Farbfläche oder Marker */
+.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.7) contrast(0.9) saturate(0.4); }
 .interp-note { font-weight: 400; font-style: italic; color: #9aa4b5; font-size: 0.65rem; }

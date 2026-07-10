@@ -134,9 +134,16 @@ let selectedStationId = null;
 // "nur Rekorde" gilt pro Ansicht: Tabelle standardmäßig an, Karte aus
 const recordsOnly = { map: false, table: true };
 
+// Touch-Geräte: Hover existiert nicht — iOS emuliert beim ersten Tap ein
+// mouseover (Tooltip blitzt auf, Klick geht verloren). Dort gibt es keine
+// Hover-Tooltips, dafür größere Marker und Interpolationswerte per Tap.
+const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
+
 const map = L.map("map", { zoomSnap: 0.5 }).setView([51.2, 10.3], 6);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+// deutscher OSM-Kartenstil (deutsche Beschriftung); der dunkle Look kommt
+// per CSS-Filter auf der Kachel-Ebene (siehe .leaflet-tile-pane in style.css)
+L.tileLayer("https://tile.openstreetmap.de/{z}/{x}/{y}.png", {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   maxZoom: 12,
 }).addTo(map);
 
@@ -293,8 +300,8 @@ const interpTip = L.tooltip({ direction: "top", offset: [0, -10], className: "te
 function hideInterpTip() {
   if (map.hasLayer(interpTip)) map.removeLayer(interpTip);
 }
-map.on("mousemove", (ev) => {
-  // über einem Stationsmarker hat dessen eigener Tooltip Vorrang
+function showInterpTip(ev) {
+  // über einem Stationsmarker hat dessen eigener Tooltip/Klick Vorrang
   const overMarker = ev.originalEvent.target?.classList?.contains("leaflet-interactive");
   if (!overlayEnabled || view !== "map" || !germanyRings || overMarker
       || !inGermany(ev.latlng.lng, ev.latlng.lat)) {
@@ -310,8 +317,15 @@ map.on("mousemove", (ev) => {
   interpTip.setContent(`≈ ${MODES[mode].fmt(v)}<br><span class="interp-note">interpoliert</span>`);
   interpTip.setLatLng(ev.latlng);
   if (!map.hasLayer(interpTip)) interpTip.addTo(map);
-});
-map.on("mouseout", hideInterpTip);
+}
+if (IS_TOUCH) {
+  // Tap auf die Fläche zeigt den Wert (bleibt stehen bis Pan oder nächster Tap)
+  map.on("click", showInterpTip);
+  map.on("movestart", hideInterpTip);
+} else {
+  map.on("mousemove", showInterpTip);
+  map.on("mouseout", hideInterpTip);
+}
 
 function levelColors() {
   return MODES[mode].colors;
@@ -429,7 +443,8 @@ function tempLabel(st) {
 // Markergröße wächst mit dem Zoom: in der Deutschland-Übersicht klein,
 // beim Reinzoomen größer (Faktor 1 bei Zoom 8)
 function zoomFactor() {
-  return Math.min(1.8, Math.max(0.55, 1 + (map.getZoom() - 8) * 0.22));
+  const f = Math.min(1.8, Math.max(0.55, 1 + (map.getZoom() - 8) * 0.22));
+  return IS_TOUCH ? f * 1.5 : f; // Finger brauchen größere Ziele
 }
 function renderMap() {
   const c = levelColors();
@@ -450,7 +465,7 @@ function renderMap() {
       m.bindTooltip(tempLabel(st), {
         permanent: true, direction: "top", offset: [0, -6], className: "temp-label",
       });
-    } else {
+    } else if (!IS_TOUCH) {
       m.bindTooltip(`<b>${st.name}</b><br>${MODES[mode].fmt(stToday(st))}`, {
         direction: "top", offset: [0, -6], className: "temp-label",
       });
