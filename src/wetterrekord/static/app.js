@@ -783,7 +783,10 @@ const shareBtn = document.getElementById("timeline-share");
 shareBtn.addEventListener("click", async () => {
   const url = new URL(location.origin + location.pathname);
   if (mode !== "heat") url.searchParams.set("mode", mode);
-  if (timelineOffset !== 0) url.searchParams.set("at", timelineDate().toISOString());
+  // immer den angezeigten Zeitpunkt mitgeben — auch "live" ist für den
+  // Empfänger später ein historischer Moment; Unix-Sekunden statt ISO,
+  // damit keine %-Encodings in der URL landen
+  url.searchParams.set("at", Math.floor(timelineDate().getTime() / 1000));
   const link = url.toString();
   if (navigator.share) {
     try {
@@ -808,7 +811,9 @@ shareBtn.addEventListener("click", async () => {
     mode = m;
     setToggle(MODE_BUTTON_IDS, "mode-" + m);
   }
-  const at = new Date(params.get("at") ?? NaN);
+  const raw = params.get("at");
+  // Unix-Sekunden (neue Links) oder ISO-String (alte Links)
+  const at = raw === null ? NaN : /^\d+$/.test(raw) ? new Date(raw * 1000) : new Date(raw);
   if (!isNaN(at)) {
     const steps = Math.round((at - Date.now()) / (30 * 60 * 1000));
     if (steps < 0) {
