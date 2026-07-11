@@ -133,11 +133,21 @@ def parse_10min(data: bytes, columns: list[str]) -> list[tuple[datetime, tuple[f
     return values
 
 
+# Longest DWD series (Mannheim, since 1781) unpacks to ~20 MB — anything far
+# beyond that is not a data file. Guards against decompression bombs should
+# the download ever be tampered with.
+MAX_MEMBER_SIZE = 100 * 1024 * 1024
+
+
 def read_zip_member(data: bytes, prefix: str = "produkt") -> bytes:
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
-        for name in zf.namelist():
-            if Path(name).name.startswith(prefix):
-                return zf.read(name)
+        for info in zf.infolist():
+            if Path(info.filename).name.startswith(prefix):
+                if info.file_size > MAX_MEMBER_SIZE:
+                    raise ValueError(
+                        f"zip member {info.filename!r} too large: {info.file_size} bytes"
+                    )
+                return zf.read(info)
     raise FileNotFoundError(f"no member starting with {prefix!r} in zip")
 
 

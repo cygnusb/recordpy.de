@@ -4,7 +4,8 @@ services:
     image: wetterrekord
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      # nur localhost: der Dienst gehört hinter einen Reverse Proxy (TLS, HSTS)
+      - "127.0.0.1:8000:8000"
     volumes:
       - wetterrekord-data:/data
     environment:

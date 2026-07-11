@@ -158,6 +158,19 @@ def test_imprint_shown_when_configured(monkeypatch):
     assert '<a href="impressum">' in index
 
 
+def test_security_headers():
+    client = _client()
+    for path in ("/", "/robots.txt"):
+        headers = client.get(path).headers
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["x-frame-options"] == "SAMEORIGIN"
+        assert headers["referrer-policy"] == "strict-origin"
+        csp = headers["content-security-policy"]
+        assert "default-src 'self'" in csp
+        assert "script-src 'self' https://unpkg.com" in csp
+        assert "img-src 'self' data: blob: https://tile.openstreetmap.de" in csp
+
+
 def test_germany_geojson_route():
     resp = _client().get("/germany.geo.json")
     assert resp.status_code == 200

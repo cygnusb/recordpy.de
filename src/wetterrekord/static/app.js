@@ -35,6 +35,14 @@ const LEVEL_LABEL_LONG = {
   alltime: "Allzeitrekord", month: "Monatsrekord", quinzaine: "Halbmonatsrekord", day: "Tagesrekord",
 };
 
+// Stationsname/Bundesland stammen aus DWD-Dateien — Fremddaten, die nie
+// ungeescaped in innerHTML landen dürfen
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
 function fmtTemp(v) {
   return v === null || v === undefined ? "–" : v.toFixed(1).replace(".", ",") + " °C";
 }
@@ -430,7 +438,7 @@ function renderStats() {
     if (broken[lvl]) parts.push(`<span class="stat"><i style="background:${c[lvl]}"></i>${broken[lvl]}× ${LEVEL_LABEL[lvl]}</span>`);
   }
   if (oldest) {
-    parts.push(`<span class="stat">ältester gebrochener Rekord: <b>${oldest.name}</b>, von ${oldest.year} (${oldest.age} Jahre)</span>`);
+    parts.push(`<span class="stat">ältester gebrochener Rekord: <b>${esc(oldest.name)}</b>, von ${oldest.year} (${oldest.age} Jahre)</span>`);
   }
   document.getElementById("stats").innerHTML = parts.join(" · ");
 }
@@ -466,7 +474,7 @@ function renderMap() {
         permanent: true, direction: "top", offset: [0, -6], className: "temp-label",
       });
     } else if (!IS_TOUCH) {
-      m.bindTooltip(`<b>${st.name}</b><br>${MODES[mode].fmt(stToday(st))}`, {
+      m.bindTooltip(`<b>${esc(st.name)}</b><br>${MODES[mode].fmt(stToday(st))}`, {
         direction: "top", offset: [0, -6], className: "temp-label",
       });
     }
@@ -527,7 +535,7 @@ function renderTable() {
     const cells = COLUMNS.map((col) => {
       if (col.key === "status") return `<td>${badgeHtml(info)}</td>`;
       const v = col.value(st);
-      const txt = col.fmt ? col.fmt(v) : v ?? "–";
+      const txt = col.fmt ? col.fmt(v) : esc(v ?? "–");
       return `<td class="${col.num ? "num" : ""}">${txt}</td>`;
     }).join("");
     return `<tr data-id="${st.id}">${cells}</tr>`;
@@ -572,8 +580,8 @@ function showPanel(st) {
        <span class="cold">▼ ${fmtTemp(st.tmin_today)}</span>`
     : `<span>${MODES[mode].icon} ${MODES[mode].fmt(stToday(st))}</span>`;
   document.getElementById("panel-content").innerHTML = `
-    <h2>${st.name}</h2>
-    <div class="meta">${st.bundesland} · ${st.altitude} m · Daten seit ${st.first_year}</div>
+    <h2>${esc(st.name)}</h2>
+    <div class="meta">${esc(st.bundesland)} · ${st.altitude} m · Daten seit ${st.first_year}</div>
     ${badgeHtml(info)}
     <div class="today-vals">${todayVals}</div>
     <div class="meta">${MODES[mode].todayLabel}${st.last_measurement ? ", letzte Messung " + st.last_measurement.slice(11, 16) + " Uhr" : ""}</div>

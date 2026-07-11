@@ -3,6 +3,7 @@
 import importlib.metadata
 import logging
 import sqlite3
+import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -96,6 +97,33 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="wetterrekord.de", lifespan=lifespan)
+
+# unpkg: Leaflet (mit SRI in index.html); tile.openstreetmap.de: Basiskarte;
+# data:/blob:: Favicon und die als Data-URL erzeugte Interpolations-Farbfläche.
+# 'unsafe-inline' nur für Styles: Leaflet und das UI setzen style-Attribute.
+SECURITY_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "script-src 'self' https://unpkg.com; "
+        "style-src 'self' https://unpkg.com 'unsafe-inline'; "
+        "img-src 'self' data: blob: https://tile.openstreetmap.de https://unpkg.com; "
+        "connect-src 'self'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'self'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Referrer-Policy": "strict-origin",
+}
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers.update(SECURITY_HEADERS)
+    return response
 
 
 def _record(row) -> dict | None:
@@ -329,15 +357,20 @@ def germany_geojson():
 # current day. Cached for the live-poll interval; the route shadows the
 # StaticFiles mount, so no static og-image.png must exist.
 _og_cache: tuple[float, bytes] | None = None
+# serialize rendering: parallel requests on an expired cache would otherwise
+# each render their own PNG (CPU-bound, easy request amplification)
+_og_lock = threading.Lock()
 
 
 @app.api_route("/og-image.png", methods=["GET", "HEAD"])
 def og_image():
     global _og_cache
-    if _og_cache is None or time.time() - _og_cache[0] > config.LIVE_POLL_MINUTES * 60:
-        _og_cache = (time.time(), ogimage.render(api_stations()))
+    with _og_lock:
+        if _og_cache is None or time.time() - _og_cache[0] > config.LIVE_POLL_MINUTES * 60:
+            _og_cache = (time.time(), ogimage.render(api_stations()))
+        content = _og_cache[1]
     return Response(
-        content=_og_cache[1],
+        content=content,
         media_type="image/png",
         headers={"Cache-Control": f"public, max-age={config.LIVE_POLL_MINUTES * 60}"},
     )

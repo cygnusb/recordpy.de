@@ -16,6 +16,10 @@ RUN uv sync --frozen --no-dev
 ENV PATH="/app/.venv/bin:$PATH" \
     WETTERREKORD_DATA_DIR=/data
 
+RUN useradd --system --uid 1000 --no-create-home wetterrekord \
+    && mkdir -p /data && chown wetterrekord /data
+USER wetterrekord
+
 VOLUME /data
 EXPOSE 8000
 
