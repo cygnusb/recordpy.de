@@ -93,11 +93,12 @@ body.ui-simple .param-modes .advanced-only { display: none !important; }
 .switch input:checked + .knob::after { transform: translateX(14px); background: #fff; }
 .switch:hover .knob { border-color: #4a5870; }
 
-/* eigene volle Zeile mit flexiblem Slider: Label und Button sind immer da
-   (feste Breite bzw. nur disabled), damit beim Schieben nichts springt */
+/* Timeline + Teilen immer sichtbar (nicht im einklappbaren Filter-Panel) */
+.timeline-row { margin-top: 6px; }
 .timeline {
   display: flex; flex: 1 1 100%; align-items: center; gap: 8px;
   background: #1a202b; border: 1px solid #2a3140; border-radius: 8px; padding: 3px 10px;
+  min-width: 0;
 }
 .timeline.tl-past { border-color: #ffd166; }
 .timeline input[type=range] {
@@ -154,11 +155,13 @@ body.ui-simple .param-modes .advanced-only { display: none !important; }
   .filter-controls select,
   .filter-controls input,
   .filter-controls label { font-size: 0.75rem; }
-  .timeline { flex-wrap: wrap; justify-content: center; padding: 3px 6px; }
+  .timeline-row { margin-top: 4px; }
+  .timeline { flex-wrap: wrap; justify-content: center; padding: 3px 6px; gap: 6px; }
   .timeline input[type=range] { flex: 1 1 120px; min-width: 100px; }
   .timeline input[type=range]::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; }
   .timeline input[type=range]::-moz-range-thumb { width: 16px; height: 16px; }
   #timeline-label { min-width: 0; font-size: 0.72rem; }
+  #timeline-share, #timeline-now { font-size: 0.72rem; padding: 3px 8px; }
   .legend { font-size: 0.65rem; gap: 6px; margin-top: 4px; }
   #panel {
     top: auto; bottom: 0; right: 0; left: 0; width: auto;

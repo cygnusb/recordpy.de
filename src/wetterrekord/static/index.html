@@ -72,18 +72,20 @@
       <label class="switch" id="filter-records-label"><input type="checkbox" id="filter-records"><span class="knob"></span> nur Rekorde</label>
       <label class="switch hidden" id="filter-now-missing-label"><input type="checkbox" id="filter-now-missing"><span class="knob"></span> ohne Messung</label>
       <label class="switch" id="overlay-label" title="interpolierte Messwert-Farbfläche über Deutschland"><input type="checkbox" id="overlay-toggle"><span class="knob"></span> Farbfläche</label>
-      <span class="timeline" title="Zeitpunkt der Anzeige wählen (bis zu 30 Tage zurück, soweit Daten vorliegen)">
-        <span class="tl-caption">🕐 Rückblick</span>
-        <span class="tl-end" id="timeline-min-label">−48&thinsp;h</span>
-        <input type="range" id="timeline" min="-96" max="0" value="0" step="1" autocomplete="off" list="timeline-ticks">
-        <datalist id="timeline-ticks">
-          <option value="-96"></option><option value="-48"></option><option value="0"></option>
-        </datalist>
-        <span id="timeline-label">jetzt</span>
-        <button id="timeline-now" disabled>⏵ zurück zu live</button>
-        <button id="timeline-share" title="Link zu diesem Zeitpunkt teilen bzw. kopieren">🔗 Teilen</button>
-      </span>
     </div>
+  </div>
+  <div class="controls timeline-row">
+    <span class="timeline" title="Zeitpunkt der Anzeige wählen (bis zu 30 Tage zurück, soweit Daten vorliegen)">
+      <span class="tl-caption">🕐 Rückblick</span>
+      <span class="tl-end" id="timeline-min-label">−48&thinsp;h</span>
+      <input type="range" id="timeline" min="-96" max="0" value="0" step="1" autocomplete="off" list="timeline-ticks">
+      <datalist id="timeline-ticks">
+        <option value="-96"></option><option value="-48"></option><option value="0"></option>
+      </datalist>
+      <span id="timeline-label">jetzt</span>
+      <button id="timeline-now" disabled>⏵ zurück zu live</button>
+      <button id="timeline-share" title="Link zu diesem Zeitpunkt teilen bzw. kopieren">🔗 Teilen</button>
+    </span>
   </div>
   <div class="legend" id="legend"></div>
 </header>
