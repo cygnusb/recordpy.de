@@ -50,8 +50,14 @@ header h1 .claim { font-size: 0.8rem; font-weight: 400; color: #9aa4b5; letter-s
 }
 .filter-dot.hidden { display: none; }
 
-/* Desktop: filter panel always visible; mobile collapse via body class */
-.filter-panel { display: block; }
+/* Filter panel collapsible on all viewports (default: open desktop, closed mobile) */
+.filter-panel { display: none; }
+body.filters-open .filter-panel {
+  display: block;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #2a3140;
+}
 body.ui-simple .advanced-only { display: none !important; }
 body.ui-simple .param-modes .advanced-only { display: none !important; }
 .hidden { display: none !important; }
@@ -143,11 +149,6 @@ body.ui-simple .param-modes .advanced-only { display: none !important; }
   }
   .param-modes .mode-label { display: none; }
   .filter-chip { padding: 4px 8px; font-size: 0.72rem; flex-shrink: 0; }
-  body:not(.filters-open) .filter-panel { display: none; }
-  body.filters-open .filter-panel {
-    display: block; margin-top: 4px; padding-top: 6px;
-    border-top: 1px solid #2a3140;
-  }
   .filter-controls { gap: 6px; margin-top: 0; font-size: 0.75rem; }
   .filter-controls .mode-toggle button,
   .filter-controls select,
@@ -158,16 +159,11 @@ body.ui-simple .param-modes .advanced-only { display: none !important; }
   .timeline input[type=range]::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; }
   .timeline input[type=range]::-moz-range-thumb { width: 16px; height: 16px; }
   #timeline-label { min-width: 0; font-size: 0.72rem; }
-  .legend { font-size: 0.65rem; gap: 6px; margin-top: 6px; }
+  .legend { font-size: 0.65rem; gap: 6px; margin-top: 4px; }
   #panel {
     top: auto; bottom: 0; right: 0; left: 0; width: auto;
     max-height: 45vh; border-radius: 12px 12px 0 0;
   }
-}
-@media (min-width: 701px) {
-  #filter-toggle { display: none; }
-  body.filters-open .filter-panel,
-  body:not(.filters-open) .filter-panel { display: block; }
 }
 #timeline-label {
   font-weight: 600; font-variant-numeric: tabular-nums;

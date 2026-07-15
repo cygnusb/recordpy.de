@@ -824,25 +824,25 @@ function updateFilterChip() {
   document.getElementById("filter-active-dot").classList.toggle("hidden", !filtersAreActive());
 }
 
-function setFilterPanelOpen(open) {
+function setFilterPanelOpen(open, { persist = true } = {}) {
   document.body.classList.toggle("filters-open", open);
   const btn = document.getElementById("filter-toggle");
   btn.setAttribute("aria-expanded", open ? "true" : "false");
   btn.classList.toggle("active", open);
-  if (MOBILE_MQ.matches) {
+  if (persist) {
     sessionStorage.setItem("wetterrekordFiltersOpen", open ? "1" : "0");
   }
   setTimeout(() => map.invalidateSize(), 50);
 }
 
 function syncFilterPanelToViewport() {
-  // Desktop: panel always open. Mobile: restore session preference (default closed).
-  if (!MOBILE_MQ.matches) {
-    setFilterPanelOpen(true);
-    return;
-  }
+  // Explicit user choice wins; otherwise desktop open, mobile closed.
   const stored = sessionStorage.getItem("wetterrekordFiltersOpen");
-  setFilterPanelOpen(stored === "1");
+  if (stored === null) {
+    setFilterPanelOpen(!MOBILE_MQ.matches, { persist: false });
+  } else {
+    setFilterPanelOpen(stored === "1", { persist: false });
+  }
 }
 
 function render() {
@@ -1005,7 +1005,7 @@ document.getElementById("view-table").addEventListener("click", () => {
   view = "table"; setToggle(["view-map", "view-table"], "view-table"); render();
 });
 document.getElementById("filter-toggle").addEventListener("click", () => {
-  setFilterPanelOpen(!document.body.classList.contains("filters-open"));
+  setFilterPanelOpen(!document.body.classList.contains("filters-open"), { persist: true });
 });
 document.getElementById("filter-land").addEventListener("change", render);
 document.getElementById("filter-records").addEventListener("change", (ev) => {
