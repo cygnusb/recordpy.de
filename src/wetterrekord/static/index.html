@@ -56,15 +56,16 @@
       <button id="mode-precip" class="advanced-only" title="Regen">🌧️ <span class="mode-label">Regen</span></button>
       <button id="mode-press" class="advanced-only" title="Luftdruck-Tagesmittel auf Meereshöhe, Hoch- und Tiefdruckrekorde">🌀 <span class="mode-label">Druck</span></button>
     </div>
-    <div class="mode-toggle">
+    <div class="mode-toggle advanced-only" id="view-toggle">
       <button id="view-map" class="active">Karte</button>
       <button id="view-table">Tabelle</button>
     </div>
-    <button type="button" id="filter-toggle" class="filter-chip" aria-expanded="false" aria-controls="filter-panel">
+    <button type="button" id="share-btn" class="filter-chip" title="Link teilen bzw. kopieren">🔗 Teilen</button>
+    <button type="button" id="filter-toggle" class="filter-chip advanced-only" aria-expanded="false" aria-controls="filter-panel">
       Filter <span id="filter-active-dot" class="filter-dot hidden" title="Filter aktiv"></span>
     </button>
   </div>
-  <div id="filter-panel" class="filter-panel">
+  <div id="filter-panel" class="filter-panel advanced-only">
     <div class="controls filter-controls">
       <select id="filter-land"><option value="">Alle Bundesländer</option></select>
       <label id="filter-alt-label">Höhe ≤ <input type="number" id="filter-alt" placeholder="∞" min="0" step="100"> m</label>
@@ -84,7 +85,6 @@
       </datalist>
       <span id="timeline-label">jetzt</span>
       <button id="timeline-now" disabled>⏵ zurück zu live</button>
-      <button id="timeline-share" title="Link zu diesem Zeitpunkt teilen bzw. kopieren">🔗 Teilen</button>
     </span>
   </div>
   <div class="legend" id="legend"></div>

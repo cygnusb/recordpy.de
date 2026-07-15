@@ -161,7 +161,8 @@ body.ui-simple .param-modes .advanced-only { display: none !important; }
   .timeline input[type=range]::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; }
   .timeline input[type=range]::-moz-range-thumb { width: 16px; height: 16px; }
   #timeline-label { min-width: 0; font-size: 0.72rem; }
-  #timeline-share, #timeline-now { font-size: 0.72rem; padding: 3px 8px; }
+  #timeline-now { font-size: 0.72rem; padding: 3px 8px; }
+  #share-btn { font-size: 0.72rem; padding: 4px 8px; }
   .legend { font-size: 0.65rem; gap: 6px; margin-top: 4px; }
   #panel {
     top: auto; bottom: 0; right: 0; left: 0; width: auto;
@@ -179,12 +180,7 @@ body.ui-simple .param-modes .advanced-only { display: none !important; }
   flex-shrink: 0;
 }
 #timeline-now:disabled { opacity: 0.35; cursor: default; }
-#timeline-share {
-  background: transparent; color: #9aa4b5; border: 1px solid #3a4557;
-  border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 0.8rem;
-  flex-shrink: 0;
-}
-#timeline-share:hover { color: #e8e8e8; border-color: #4a5870; }
+#share-btn { flex-shrink: 0; }
 
 
 .badge-near { background: transparent; border: 1.5px solid; }

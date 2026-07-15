@@ -790,6 +790,11 @@ function applyUiModeControls() {
     const label = heatBtn.querySelector(".mode-label");
     if (label) label.textContent = dataView === "now" ? "Temp" : "Hitze";
   }
+  // Table view is Advanced-only — drop back to map in Simple
+  if (isSimpleMode() && view !== "map") {
+    view = "map";
+    setToggle(["view-map", "view-table"], "view-map");
+  }
 }
 
 function updateFilterVisibility() {
@@ -987,6 +992,15 @@ function setUiMode(next) {
       mode = "heat";
       setToggle(MODE_BUTTON_IDS, "mode-heat");
     }
+    // Simple: map only, no filter panel
+    if (view !== "map") {
+      view = "map";
+      setToggle(["view-map", "view-table"], "view-map");
+    }
+    setFilterPanelOpen(false, { persist: false });
+  } else {
+    // Advanced: restore filter panel preference / viewport default
+    syncFilterPanelToViewport();
   }
   render();
 }
@@ -1066,7 +1080,7 @@ document.getElementById("timeline-now").addEventListener("click", () => {
 // Share-Link: kodiert Zeitpunkt und Modus; funktioniert nur so weit zurück,
 // wie Messwerte aufbewahrt werden (30 Tage) — der Empfänger wird per
 // updateTimelineRange auf den ältesten verfügbaren Zeitpunkt begrenzt
-const shareBtn = document.getElementById("timeline-share");
+const shareBtn = document.getElementById("share-btn");
 shareBtn.addEventListener("click", async () => {
   const url = new URL(location.origin + location.pathname);
   if (mode !== "heat") url.searchParams.set("mode", mode);
