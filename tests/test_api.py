@@ -52,8 +52,10 @@ def test_api_stations_history_start(tmp_path: Path, monkeypatch):
     conn.execute(
         "INSERT INTO stations VALUES ('00001', 'Test', 'Hessen', 50.0, 9.0, 100, 1990, 2026)"
     )
-    # measurement on "today" so the live `now` field is populated
-    today_ts = datetime.now(TZ).replace(hour=12, minute=0, second=0, microsecond=0).isoformat()
+    # measurement on "today" so the live `now` field is populated; must not
+    # lie in the future (latest_measurements filters ts <= now), so truncate
+    # the current time instead of a fixed hour
+    today_ts = datetime.now(TZ).replace(minute=0, second=0, microsecond=0).isoformat()
     conn.execute(
         "INSERT INTO measurements VALUES (?,?,?,?,?,?)",
         ("00001", today_ts, 20.0, 5.0, 0.2, 1013.0),
